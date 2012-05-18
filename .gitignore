@@ -1,0 +1,9 @@
+# idea
+*.iml
+.idea/
+
+#phantomjs binary
+phantomjs/
+
+#exclude config from repo
+config/
