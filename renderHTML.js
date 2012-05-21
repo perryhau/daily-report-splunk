@@ -41,12 +41,12 @@ page.onConsoleMessage = function (msg) {
 
 page.onLoadStarted = function () {
     loadInProgress = true;
-    debug("load started");
+    debug("load started " );
 };
 
 page.onLoadFinished = function () {
     loadInProgress = false;
-    debug("load finished");
+    debug("load finished.");
 };
 
 
@@ -55,6 +55,7 @@ var steps = [
         //Load Login Page
         debug('Loading ' + baseUrl)
         page.open(baseUrl);
+
     }, function () {
         //set cookie
         debug('Setting cookies: ' + userCookieValue + ", domain: " + domain);
@@ -79,6 +80,7 @@ var steps = [
             phantom.exit();
         }
 
+
     }, function () {
         debug('Load page ' + targetUrl);
         //get the report
@@ -99,7 +101,8 @@ var steps = [
         var myVar = {webUrl:baseStaticContent};
         pushVariablesToBrowser(page, myVar);
 
-        page.includeJs('http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js');
+
+        page.includeJs('https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js');
         page.evaluate(function () {
             var layout = $('.layout').attr('id', 'startHere'),
                 length,
