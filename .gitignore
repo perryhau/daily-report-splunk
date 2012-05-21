@@ -7,3 +7,6 @@ phantomjs/
 
 #exclude config from repo
 config/
+
+#exclude real data config
+real_data/

@@ -7,15 +7,21 @@ __author__ = 'jakub.zygmunt'
 class DailyReportTest(unittest.TestCase):
 
     def load_config(self):
-        config_file = 'config/connection.conf'
+        config_file = 'config/confidential.conf'
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
         try:
-            for x in parser.items('connection'):
+            for x in parser.items('confidential'):
                 setattr(self, x[0], x[1])
         except ConfigParser.NoSectionError:
             self.url = ''
             self.session_key = ''
+            self.auth_username = ''
+            self.auth_password = ''
+            self.mailserver = ''
+            self.use_ssl = 0
+            self.use_tls = 0
+            self['from'] = ''
 
 
 
@@ -128,6 +134,18 @@ class DailyReportTest(unittest.TestCase):
         dr = DailyReport(splunk_home='test_splunk', mailer_config= mailer_config)
         output_config = dr.mailer_config
         self.assertEqual(expected_config, output_config)
+
+    def test_should_send_email_to_private_account(self):
+        self.load_config()
+        dr = DailyReport()
+        mail_fields = ['auth_username', 'auth_password','mailserver','use_ssl','use_tls','from']
+        for x in mail_fields:
+            dr.mailer_config[x] = getattr(self, x)
+
+        bodyHTML =  dr.get_report(url=self.url, session_key=self.session_key )
+        dr.send_email(self.test_to, bodyHTML)
+        # check mailbox
+        self.assertTrue(True)
 
 
 
