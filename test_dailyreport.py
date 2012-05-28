@@ -11,11 +11,14 @@ class DailyReportTest(unittest.TestCase):
         parser = ConfigParser.SafeConfigParser()
         parser.read(config_file)
         try:
-            for x in parser.items('confidential'):
-                setattr(self, x[0], x[1])
+            for section in parser.sections():
+                for x in parser.items(section):
+                    setattr(self, x[0], x[1])
         except ConfigParser.NoSectionError:
             self.url = ''
-            self.session_key = ''
+            self.url_static = ''
+            self.splunk_username = ''
+            self.splunk_password = ''
             self.auth_username = ''
             self.auth_password = ''
             self.mailserver = ''
@@ -24,7 +27,12 @@ class DailyReportTest(unittest.TestCase):
             self['from'] = ''
 
 
-
+    def read_file(self, filename):
+        file = open(filename)
+        output = []
+        for line in file.xreadlines():
+            output.append(line)
+        return ''.join(output)
 
     def test_should_return_empty_list_on_wrong_splunk_home_path(self):
         expected_list = []
@@ -90,18 +98,18 @@ class DailyReportTest(unittest.TestCase):
         output = dr.get_report(url=invalid_url)
         self.assertEquals(expected_content, output)
 
-    def test_should_return_no_content_on_invalid_session(self):
+    def test_should_return_no_content_on_invalid_credentials(self):
         self.load_config()
         expected_content = ''
         dr = DailyReport()
-        output = dr.get_report(url=self.url, session_key='invalid' )
+        output = dr.get_report(url=self.url, username='invalid', password='nopassword' )
         self.assertEquals(expected_content, output)
 
     def test_should_return_content_on_valid_connection_data(self):
         # update connection.conf
         self.load_config()
         dr = DailyReport()
-        output = dr.get_report(url=self.url, session_key=self.session_key )
+        output = dr.get_report(url=self.url, url_static=self.url_static, username=self.splunk_username, password=self.splunk_password )
         self.assertTrue(len(output) > 0)
 
     def test_should_return_empty_mailer_settings_on_invalid_splunk_home(self):
@@ -130,10 +138,16 @@ class DailyReportTest(unittest.TestCase):
                            'use_tls':'1',
                            'from':'default_from@localhost'
         }
-        mailer_config = '/etc/apps/app4/local/mailer.conf'
-        dr = DailyReport(splunk_home='test_splunk', mailer_config= mailer_config)
+        mailer_config = 'test_splunk/etc/apps/app4/local/mailer.conf'
+        dr = DailyReport(splunk_home='test_splunk', config= mailer_config)
         output_config = dr.mailer_config
         self.assertEqual(expected_config, output_config)
+
+    def test_should_update_base_url(self):
+        expected_base_url = 'http://newbase.url'
+        mailer_config = 'test_splunk/etc/apps/app4/local/mailer.conf'
+        dr = DailyReport(splunk_home='test_splunk', config= mailer_config)
+        self.assertEqual(expected_base_url, dr.base_url)
 
     def test_should_send_email_to_private_account(self):
         self.load_config()
@@ -142,10 +156,11 @@ class DailyReportTest(unittest.TestCase):
         for x in mail_fields:
             dr.mailer_config[x] = getattr(self, x)
 
-        bodyHTML =  dr.get_report(url=self.url, session_key=self.session_key )
-        dr.send_email(self.test_to, bodyHTML)
+        bodyHTML =  'This is <b>HTML</b> email'
+        dr.send_email(to=self.test_to, html_body=bodyHTML)
         # check mailbox
         self.assertTrue(True)
+
 
 
 

@@ -11,9 +11,11 @@ var page = require('webpage').create(),
     domain,
     baseUrl,
     baseStaticContent,
-    baseStaticContentSuffix = '/en-US/static/app/jakubTest',
+    baseStaticContentSuffix,
     loadInProgress,
     userCookieValue,
+    splunkUsername,
+    splunkPassword,
     targetUrl,
     testindex = 0,
     interval,
@@ -52,31 +54,41 @@ page.onLoadFinished = function () {
 
 var steps = [
     function () {
-        //Load Login Page
-        debug('Loading ' + baseUrl)
-        page.open(baseUrl);
-
+        var loginUrl = baseUrl + '/en-US/account/login';
+        debug('Loading ' + loginUrl);
+        page.open(loginUrl);
     }, function () {
         //set cookie
-        debug('Setting cookies: ' + userCookieValue + ", domain: " + domain);
-        var myVar = {cookieValue:userCookieValue,
-            cookieDomain:domain
+        debug('Setting username / password: ');
+        var myVar = {username:splunkUsername,
+            password:splunkPassword
         };
         pushVariablesToBrowser(page, myVar);
 
-        var cookieSetSuccessfuly = page.evaluate(function () {
-            var cookieSet = false;
-            try {
-                document.cookie = 'session_id_8000=' +
-                    myVar.cookieValue + '; path=/; domain=' + myVar.cookieDomain;
-                cookieSet = true;
-            } catch (exception) {
+        // enter the credentials
+        debug('Filling the fields');
+        var splunkFormLoaded = page.evaluate(function () {
+            var usernameField = document.getElementById('username'),
+                passwordField = document.getElementById('password'),
+                isFormPresent = false;
+            if (usernameField && passwordField) {
+                usernameField.value = myVar.username;
+                passwordField.value = myVar.password;
 
+                var arr = document.getElementsByClassName('loginForm'), i;
+                for(i=0; i < arr.length; i++) {
+                    if (arr[i].getAttribute('method') == 'post') {
+                        arr[i].submit();
+                    }
+                }
+
+                isFormPresent = true;
             }
-            return cookieSet;
+
+            return isFormPresent;
         });
-        if (!cookieSetSuccessfuly) {
-            debug('Cannot set cookie. Exiting');
+
+        if (!splunkFormLoaded) {
             phantom.exit();
         }
 
@@ -157,10 +169,8 @@ var steps = [
                 var content = document.getElementById('startHere');
                 return content ? content.innerHTML : '';
             }),
-            header = '<html><link href="' + baseStaticContent +
-                '/splunk.css"  rel="stylesheet" type="text/css" />' +
-                '<link href="' + baseStaticContent +
-                '/fluidGrid.css" rel="stylesheet" type="text/css"/><body><div class="container">',
+            header = '<html><body><div class="container">',
+//            header = fs.read('static/header.html'),
             footer = '</div></body></html>',
             dailyEmail = header + content + footer;
         if (content !== '') {
@@ -171,15 +181,18 @@ var steps = [
 
     }
 ];
-if (phantom.args.length > 1) {
+if (phantom.args.length > 3) {
     targetUrl = phantom.args[0];
-    userCookieValue = phantom.args[1];
+    baseStaticContentSuffix = phantom.args[1];
+//    userCookieValue = phantom.args[2];
+    splunkUsername = phantom.args[2];
+    splunkPassword = phantom.args[3]
     var urlMap = getBaseUrl(targetUrl);
     baseUrl = urlMap.baseUrl;
     baseStaticContent = baseUrl + baseStaticContentSuffix;
     domain = urlMap.domain;
 
-    if (phantom.args.length > 2) {
+    if (phantom.args.length > 4) {
         console.log('Enabling debug');
         // more than 2 arguments - debugmode!!!
         debug = function( msg ) {

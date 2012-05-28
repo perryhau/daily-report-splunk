@@ -1,0 +1,198 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Coudreach daily report.</title>
+</head>
+<style>
+    @font-face {
+        font-family: "VegurLight";
+        src: url("https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/fonts/Vegur-Light.otf") format("opentype");
+    }
+
+    @font-face {
+        font-family: "VegurLight";
+        src: url("https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/fonts/Vegur-Medium.otf") format("opentype");
+        font-weight: bold;
+    }
+
+    @font-face {
+        font-family: "VegurRegular";
+        src: url("https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/fonts/Vegur-Regular.otf") format("opentype");
+    }
+</style>
+<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0"
+      style="background-color: #ccc;color: #666; font-size:14px; font-family: VegurLight, Myriad Pro, Myriad, Helvetica Neue, Helvetica, Arial, sans-serif;font-weight: 100;-webkit-text-size-adjust: none;margin: 0;padding: 0;width: 100%;">
+<center>
+    <table border="0" cellpadding="0" cellspacing="0" width="600">
+        <tr>
+            <td valign="top"
+                style="background: #fff;border-collapse: collapse;background-color: #FFFFFF;">
+                <table border="0" cellspacing="0" cellpadding="0">
+                    <tr>
+                        <td class="bodyContentTop"
+                            style="border-collapse: collapse;background: #f7f7f7;border-top: 2px solid #EDEDED;border-bottom: 2px solid #EDEDED;">
+
+                            <!-- // Begin Module: Standard Content \ -->
+                            <table border="0" cellpadding="40" cellspacing="0" width="100%">
+                                <tr>
+                                    <td valign="top"
+                                        style="border-collapse: collapse;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0"
+                                               style="width:520px">
+                                            <tr>
+                                                <td width="100%">
+                                                    <img src="{{ cloudreach_logo }}"
+                                                         alt="Cloudreach - make it happen">
+                                                </td>
+                                            </tr>
+
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table border="0" cellpadding="40" cellspacing="0" width="100%"
+                                   style="background-color: #fff;">
+                                <tr>
+                                    <td valign="top"
+                                        style="border-collapse: collapse;background-color: #FFFFFF;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef;">
+                                            <tbody>
+                                            <tr>
+                                                <td align="center" class="top number"
+                                                    style="font-size: 66px; padding: 15px;text-align: center;margin-bottom: 0;width: 100%;font-weight: bold;background-color: #ffaa00;background-image: url(https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/dr_yellow_bg.png); background-repeat:repeat-x; border-top: 3px solid #f09800;color: #fff;text-shadow: 0 -1px 1px #d17a00;border-collapse: collapse;">
+                                                    {{ total_value }}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="border-collapse: collapse;">
+                                                    <table cellspacing="0" cellpadding="0" border="0" class="bottom"
+                                                           width="100%"
+                                                           style="background: #ffffff; border-collapse: collapse; border: 1px solid #DDDDDD;">
+                                                        <tbody>
+
+                                                        {% for row in yellow_table %}
+                                                        <tr style="background-color: {{ loop.cycle('#FFF8DB', '')}}">
+                                                            <td align="center"
+                                                                style="width: 33%;padding: 9px 2px;border-bottom: 1px solid #DDDDDD;font-weight: 100;border-collapse: collapse;">
+                                                                {{ row[0] }}
+                                                            </td>
+                                                            <td align="center"
+                                                                style="width: 33%;padding: 9px 2px;border-bottom: 1px solid #DDDDDD;font-weight: 100;color: #f09800;border-collapse: collapse;">
+                                                                {{ row[1] }}
+                                                            </td>
+                                                            <td align="center"
+                                                                style="width: 33%;padding: 9px 2px;border-bottom: 1px solid #DDDDDD;font-weight: 100;border-collapse: collapse;">
+                                                                {{ row[2] }}
+                                                            </td>
+
+                                                        </tr>
+                                                        {% endfor %}
+
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table border="0" cellpadding="40" cellspacing="0" width="100%"
+                                   style="background-color: #fff; ">
+                                <tr>
+                                    <td valign="top"
+                                        style="border-collapse: collapse;background-color: #FFFFFF;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef;">
+                                            <tbody>
+                                            <tr>
+                                                {% for cell in green_table_header %}
+                                                <td align="center"
+                                                    style=" padding: 5px;text-align: center;margin-bottom: 0;font-weight: bold;background-color: #b5d4a5;background-image: url(https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/dr_green_bg.png); background-repeat:repeat-x; border-top: 3px solid #2c8f33;color: #fff;text-shadow: 0 -1px 1px #026107;border-collapse: collapse;  background-position: 0 bottom;">
+                                                    {{ cell }}
+                                                </td>
+                                                {% endfor %}
+                                            </tr>
+
+                                            {% for row in green_table_rows %}
+                                            <tr>
+                                                {% set rowloop = loop %}
+                                                {% for cell in row %}
+                                                <td style="text-align: left; padding: 6px 8px; border-bottom: 1px solid #ccc; border-left: 1px solid #ccc; {% if loop.last %} border-right: 1px solid #ccc; {% endif %} background-color: {{ rowloop.cycle('#D9ECD1', '#ffffff') }};">
+                                                    {{ cell }}
+                                                </td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table border="0" cellpadding="40" cellspacing="0" width="100%"
+                                   style="background-color: #fff;">
+                                <tr>
+                                    <td valign="top"
+                                        style="border-collapse: collapse;background-color: #FFFFFF;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef;">
+                                            <tbody>
+                                            <tr>
+                                                {% for cell in blue_table_header %}
+                                                <td align="center"
+                                                    style=" padding: 5px;text-align: center;margin-bottom: 0;font-weight: bold;background-color: #7685b3;background-image: url(https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/dr_blue_bg.png); background-repeat:repeat-x; border-top: 3px solid #1c2a57;color: #fff;text-shadow: 0 -1px 1px #1c2a57;border-collapse: collapse;  background-position: 0 bottom;">
+                                                    {{ cell }}
+                                                </td>
+                                                {% endfor %}
+                                            </tr>
+
+                                            {% for row in blue_table_rows %}
+                                            <tr>
+                                                {% set rowloop = loop %}
+                                                {% for cell in row %}
+                                                <td style="text-align: {% if loop.first %} left{% else %} center{% endif %}; padding: 6px 8px; border-bottom: 1px solid #ccc; border-left: 1px solid #ccc; {% if loop.last %} border-right: 1px solid #ccc; {% endif %} background-color:  {{ rowloop.cycle('#DBE6F9', '#ffffff') }};">
+                                                    {{ cell }}
+                                                </td>
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+
+                                            <tr>
+                                                <td style="border-collapse: collapse;">
+                                                    <table cellspacing="0" cellpadding="0" border="0" class="bottom"
+                                                           width="100%"
+                                                           style="background: #ffffff; border-collapse: collapse; border: 1px solid #DDDDDD;">
+                                                        <tbody>
+
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</center>
+
+</body>
+</html>
