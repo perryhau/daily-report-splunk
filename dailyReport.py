@@ -3,23 +3,29 @@ import subprocess
 import re
 import ConfigParser
 import threading
+from jinja2.environment import Template
 from mailer.mailer import Message, Mailer
+from reportextractor import ReportExtractor
 
 __author__ = 'jakub.zygmunt'
 
 class DailyReport(object):
 
-    def __init__(self, splunk_home=None, base_url=None, mailer_config=None, session_key = None):
+    def __init__(self, splunk_home=None, base_url=None, config=None, username='', password='', url_static=''):
         self.splunk_home = '.' if splunk_home is None else splunk_home
-        self.base_url = self.__remove_ending_slash(base_url)
+        self.base_url = base_url
         # load default config
         default_mailer_config = '%s/etc/system/default/alert_actions.conf' % self.splunk_home
-        self.mailer_config = self.__load_mailer_config(default_mailer_config)
-        new_mailer_config = '%s/%s' % (splunk_home, mailer_config)
-        for k,v in self.__load_mailer_config(new_mailer_config).items():
+        self.mailer_config = self.__load_config(config_file=default_mailer_config, section='email')
+        for k,v in self.__load_config(config, 'email').items():
             self.mailer_config[k] = v
+        for k,v in self.__load_config(config, 'dailyreport').items():
+            setattr(self, k, v)
 
-        self.session_key = session_key
+        self.base_url = self.__remove_ending_slash(self.base_url)
+        self.username = username
+        self.password = password
+        self.url_static = url_static
 
     def __run_process(self, cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -33,26 +39,48 @@ class DailyReport(object):
     def __remove_ending_slash(self, url):
         return url[:-1] if url is not None and url[-1] == '/' else url
 
-    def __load_mailer_config(self, config_file):
+    def __load_config(self, config_file, section):
         parser = ConfigParser.SafeConfigParser()
         try:
             parser.read(config_file)
-            config_dict = {x[0]:x[1] for x in parser.items('email')}
+            config_dict = {x[0]:x[1] for x in parser.items(section)}
         except (TypeError, ConfigParser.NoSectionError):
             config_dict = dict()
         return config_dict
+    def __reformat_content_for_gmail(self, content):
+        extractor = ReportExtractor(content)
+        data = extractor.extract()
+        data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-small-transparent.png'
+        data['green_table_header'] = data['green_table'][0]
+        data['green_table_rows'] = data['green_table'][1:]
+        data['blue_table_header'] = data['blue_table'][0]
+        data['blue_table_rows'] = data['blue_table'][1:]
+
+        filename = 'static/template_splunk_email.html'
+        fr=open(filename,'r')
+        inputSource = fr.read()
+        template = Template(inputSource).render(data)
+        return template
 
     def __get_daily_report_for_app(self, filepath):
         email_addresses = self.get_email_addresses(filepath)
         if len(email_addresses) > 0:
             url = self.get_url_to_homepage(filepath)
-            content = self.get_report(url, self.session_key)
+            content = self.get_report(url, self.url_static, self.username, self.password)
             if len(content) > 0:
-#               for email in email_addresses:
-#                   print "send report to email: %s" % email
-#                   self.send_email(to=email, html_body=content)
-                print "send report to email: %s" % email_addresses
-                self.send_email(BCC=email_addresses, html_body=content)
+                content = self.__reformat_content_for_gmail(content)
+                self.__log(content)
+                for email in email_addresses:
+                    print "send report to email: %s" % email
+                    self.send_email(to=email, html_body=content)
+#               print "send report to email: %s" % email_addresses
+#               self.send_email(BCC=email_addresses, html_body=content)
+            else:
+                print "content is empty"
+
+    def __log(self, msg):
+        with open( "dailyreport.html", "w" ) as f:
+            f.write( msg + "\n")
 
     def get_apps(self):
         appsFolder = "%s/etc/apps" % self.splunk_home
@@ -85,13 +113,15 @@ class DailyReport(object):
                 pass
         return emails
 
-    def get_report(self, url='', session_key=''):
-        content = ''.join([line for line in self.__run_process(['phantomjs/phantomjs', '--ignore-ssl-errors=yes', 'renderHTML.js', url, session_key])]).strip()
+    def get_report(self, url='', url_static='', username='', password=''):
+        content = ''.join([line for line in self.__run_process(
+            ['phantomjs/phantomjs', '--ignore-ssl-errors=yes', 'renderHTML.js', url, url_static, username, password])]).strip()
         content = re.sub(r'[\s]{2,}', r'\n', content, flags=re.M)
         return content
 
-    def send_email(self, to='', BCC=None, html_body=None):
-        message = Message(From=self.mailer_config['from'],To=to, BCC=BCC, charset='utf-8' )
+    def send_email(self, to=None, BCC=None, html_body=None):
+#        message = Message(From=self.mailer_config['from'],To=to, BCC=BCC, charset='utf-8' )
+        message = Message(From=self.mailer_config['from'],To=to, BCC=BCC )
         message.Subject = 'A Daily Report'
         message.Html = html_body
 

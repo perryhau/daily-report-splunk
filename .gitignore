@@ -10,3 +10,6 @@ config/
 
 #exclude real data config
 real_data/
+mailer/
+jinja2/
+bs4/
