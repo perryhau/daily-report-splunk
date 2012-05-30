@@ -57,7 +57,11 @@ var steps = [
         var loginUrl = baseUrl + '/en-US/account/login';
         debug('Loading ' + loginUrl);
         page.open(loginUrl);
+
     }, function () {
+        debug('page content' + page.evaluate(function() {
+            return document.body.innerHTML;
+        }));
         //set cookie
         debug('Setting username / password: ');
         var myVar = {username:splunkUsername,

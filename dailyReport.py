@@ -11,7 +11,9 @@ __author__ = 'jakub.zygmunt'
 
 class DailyReport(object):
 
-    def __init__(self, splunk_home=None, base_url=None, config=None, username='', password='', url_static=''):
+    def __init__(self, home_folder=None, splunk_home=None, base_url=None, config=None, username='', password='', url_static=''):
+
+        self.home_folder = home_folder if home_folder is not None else self.__get_home_folder()
         self.splunk_home = '.' if splunk_home is None else splunk_home
         self.base_url = base_url
         # load default config
@@ -44,7 +46,7 @@ class DailyReport(object):
         try:
             parser.read(config_file)
             config_dict = {x[0]:x[1] for x in parser.items(section)}
-        except (TypeError, ConfigParser.NoSectionError):
+        except (TypeError, ConfigParser.NoSectionError, ConfigParser.MissingSectionHeaderError):
             config_dict = dict()
         return config_dict
     def __reformat_content_for_gmail(self, content):
@@ -82,6 +84,10 @@ class DailyReport(object):
         with open( "dailyreport.html", "w" ) as f:
             f.write( msg + "\n")
 
+    def __get_home_folder(self):
+        path = '/'.join(os.path.abspath(__file__).split('/')[:-1])
+        return path
+
     def get_apps(self):
         appsFolder = "%s/etc/apps" % self.splunk_home
         confFiles = []
@@ -115,7 +121,8 @@ class DailyReport(object):
 
     def get_report(self, url='', url_static='', username='', password=''):
         content = ''.join([line for line in self.__run_process(
-            ['phantomjs/phantomjs', '--ignore-ssl-errors=yes', 'renderHTML.js', url, url_static, username, password])]).strip()
+            ['%s/phantomjs/phantomjs' % self.home_folder, '--ignore-ssl-errors=yes',
+             '%s/renderHTML.js' % self.home_folder, url, url_static, username, password])]).strip()
         content = re.sub(r'[\s]{2,}', r'\n', content, flags=re.M)
         return content
 
@@ -138,6 +145,7 @@ class DailyReport(object):
     def do_daily_report(self):
         apps = self.get_apps()
         for app in apps:
+            print "Found app: %s" % app
             self.__get_daily_report_for_app(app)
 
 
