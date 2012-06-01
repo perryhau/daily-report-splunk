@@ -52,20 +52,20 @@ class DailyReport(object):
     def __reformat_content_for_gmail(self, content):
         extractor = ReportExtractor(content)
         data = extractor.extract()
-        data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-small-transparent.png'
+        data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-smaller-transparent.png'
         data['green_table_header'] = data['green_table'][0]
         data['green_table_rows'] = data['green_table'][1:]
         data['blue_table_header'] = data['blue_table'][0]
         data['blue_table_rows'] = data['blue_table'][1:]
 
-        filename = 'static/template_splunk_email.html'
+        filename = '%s/static/template_splunk_email.html' % self.home_folder
         fr=open(filename,'r')
         inputSource = fr.read()
         template = Template(inputSource).render(data)
         return template
 
     def __get_daily_report_for_app(self, filepath):
-        email_addresses = self.get_email_addresses(filepath)
+        email_addresses, email_title = self.get_email_app_config(filepath)
         if len(email_addresses) > 0:
             url = self.get_url_to_homepage(filepath)
             content = self.get_report(url, self.url_static, self.username, self.password)
@@ -74,7 +74,7 @@ class DailyReport(object):
                 self.__log(content)
                 for email in email_addresses:
                     print "send report to email: %s" % email
-                    self.send_email(to=email, html_body=content)
+                    self.send_email(to=email, html_body=content, title=email_title)
 #               print "send report to email: %s" % email_addresses
 #               self.send_email(BCC=email_addresses, html_body=content)
             else:
@@ -106,18 +106,26 @@ class DailyReport(object):
                 url = '%s/en-US/app/%s/awsManagedServicesHomepage' % (self.base_url, match.group(1))
         return url
 
-    def get_email_addresses(self, config_file):
+    def get_email_app_config(self, config_file):
         emails = []
+        title = None
         if os.path.isfile(config_file):
             parser = ConfigParser.SafeConfigParser()
             parser.read(config_file)
+
+            try:
+                title = parser.get('dailyreport', 'title')
+            except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+                pass
+
             try:
                 emails_option = parser.get('dailyreport', 'emails')
                 emails_option = re.sub('[, ]+',',', emails_option)
                 emails = emails_option.split(',')
+
             except ConfigParser.NoSectionError:
                 pass
-        return emails
+        return (emails, title)
 
     def get_report(self, url='', url_static='', username='', password=''):
         content = ''.join([line for line in self.__run_process(
@@ -126,10 +134,10 @@ class DailyReport(object):
         content = re.sub(r'[\s]{2,}', r'\n', content, flags=re.M)
         return content
 
-    def send_email(self, to=None, BCC=None, html_body=None):
+    def send_email(self, to=None, BCC=None, html_body=None, title=None):
 #        message = Message(From=self.mailer_config['from'],To=to, BCC=BCC, charset='utf-8' )
         message = Message(From=self.mailer_config['from'],To=to, BCC=BCC )
-        message.Subject = 'A Daily Report'
+        message.Subject = title if title is not None else 'A Daily Report'
         message.Html = html_body
 
         mailer_url_data = self.mailer_config['mailserver'].split(':')

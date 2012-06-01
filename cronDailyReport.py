@@ -1,6 +1,6 @@
 import ConfigParser
 import sys
-from dailyReport import DailyReport
+from dailyreport import DailyReport
 
 __author__ = 'jakub.zygmunt'
 
@@ -29,7 +29,7 @@ class CronDailyReport(object):
         self.load_config()
         dr = DailyReport(home_folder=home_folder, splunk_home=self.splunk_home,  config=self.config_file,
             username=self.splunk_username, password=self.splunk_password, url_static=self.url_static)
-        # dr.do_daily_report()
+        dr.do_daily_report()
 
 
 if __name__ == "__main__":

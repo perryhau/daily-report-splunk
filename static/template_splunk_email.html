@@ -22,10 +22,10 @@
         src: url("https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/fonts/Vegur-Regular.otf") format("opentype");
     }
 </style>
-<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0"
+<body margin="0" offset="0"
       style="background-color: #ccc;color: #666; font-size:14px; font-family: VegurLight, Myriad Pro, Myriad, Helvetica Neue, Helvetica, Arial, sans-serif;font-weight: 100;-webkit-text-size-adjust: none;margin: 0;padding: 0;width: 100%;">
 <center>
-    <table border="0" cellpadding="0" cellspacing="0" width="600">
+    <table border="0" cellpadding="0" cellspacing="0" width="720">
         <tr>
             <td valign="top"
                 style="background: #fff;border-collapse: collapse;background-color: #FFFFFF;">
@@ -40,7 +40,7 @@
                                     <td valign="top"
                                         style="border-collapse: collapse;">
                                         <table width="100%" border="0" cellspacing="0" cellpadding="0"
-                                               style="width:520px">
+                                               style="width:620px">
                                             <tr>
                                                 <td width="100%">
                                                     <img src="{{ cloudreach_logo }}"
@@ -87,6 +87,10 @@
                                                                 style="width: 33%;padding: 9px 2px;border-bottom: 1px solid #DDDDDD;font-weight: 100;border-collapse: collapse;">
                                                                 {{ row[2] }}
                                                             </td>
+                                                            <td align="center"
+                                                                style="width: 33%;padding: 9px 2px;border-bottom: 1px solid #DDDDDD;font-weight: 100;color: #f09800;border-collapse: collapse;">
+                                                                {{ row[3] }}
+                                                            </td>
 
                                                         </tr>
                                                         {% endfor %}
@@ -110,7 +114,7 @@
                                     <td valign="top"
                                         style="border-collapse: collapse;background-color: #FFFFFF;">
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef;">
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef; font-size: 9px; ">
                                             <tbody>
                                             <tr>
                                                 {% for cell in green_table_header %}
@@ -147,7 +151,7 @@
                                     <td valign="top"
                                         style="border-collapse: collapse;background-color: #FFFFFF;">
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef;">
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef; font-size: 9px; ">
                                             <tbody>
                                             <tr>
                                                 {% for cell in blue_table_header %}
