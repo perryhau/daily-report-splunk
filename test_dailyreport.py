@@ -70,7 +70,7 @@ class DailyReportTest(unittest.TestCase):
         input_string = '%s/etc/apps/app2/local/dailyreport.conf' % splunk_home
 
         dr = DailyReport()
-        emailAddresses = dr.get_email_addresses(input_string)
+        emailAddresses, title = dr.get_email_app_config(input_string)
         self.assertEquals(expected_email_addresses, emailAddresses)
 
     def test_should_return_empty_list_on_invalid_config_file(self):
@@ -79,7 +79,7 @@ class DailyReportTest(unittest.TestCase):
         input_string = '%s/etc/apps/app3/local/dailyreport.conf' % splunk_home
 
         dr = DailyReport()
-        emailAddresses = dr.get_email_addresses(input_string)
+        emailAddresses, title = dr.get_email_app_config(input_string)
         self.assertEquals(expected_email_addresses, emailAddresses)
 
     def test_should_return_two_email_addresses(self):
@@ -88,8 +88,18 @@ class DailyReportTest(unittest.TestCase):
         input_string = '%s/etc/apps/app1/local/dailyreport.conf' % splunk_home
 
         dr = DailyReport()
-        emailAddresses = dr.get_email_addresses(input_string)
+        emailAddresses, title = dr.get_email_app_config(input_string)
         self.assertEquals(expected_email_addresses, emailAddresses)
+
+    def test_should_return_title(self):
+        expected_title = 'email title'
+        splunk_home = 'test_splunk'
+        input_string = '%s/etc/apps/app1/local/dailyreport.conf' % splunk_home
+
+        dr = DailyReport()
+        nothing, output_title = dr.get_email_app_config(input_string)
+        self.assertEquals(expected_title, output_title)
+
 
     def test_should_return_no_content_on_invalid_url(self):
         expected_content = ''
