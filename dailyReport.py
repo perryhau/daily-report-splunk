@@ -6,28 +6,44 @@ import threading
 from jinja2.environment import Template
 from mailer.mailer import Message, Mailer
 from reportextractor import ReportExtractor
+from splunky import Splunky, SplunkyCannotConnect
 
 __author__ = 'jakub.zygmunt'
 
 class DailyReport(object):
 
-    def __init__(self, home_folder=None, splunk_home=None, base_url=None, config=None, username='', password='', url_static=''):
-
+    def __init__(self, home_folder=None, splunk_home=None, host=None, port=None, config=None, username='', password=''):
+        '''
+        home_folder - base folder of the script, used to find HTML templates
+        splunk_home - base splunk folder
+        host, port, username, password - credentials needed to connect to splunk backend
+        '''
         self.home_folder = home_folder if home_folder is not None else self.__get_home_folder()
         self.splunk_home = '.' if splunk_home is None else splunk_home
-        self.base_url = base_url
         # load default config
         default_mailer_config = '%s/etc/system/default/alert_actions.conf' % self.splunk_home
         self.mailer_config = self.__load_config(config_file=default_mailer_config, section='email')
         for k,v in self.__load_config(config, 'email').items():
             self.mailer_config[k] = v
-        for k,v in self.__load_config(config, 'dailyreport').items():
-            setattr(self, k, v)
 
-        self.base_url = self.__remove_ending_slash(self.base_url)
-        self.username = username
-        self.password = password
-        self.url_static = url_static
+        self.splunk_config = {'host': self.__remove_ending_slash(host),
+                              'port': port,
+                              'username' : username,
+                              'password' : password
+                              }
+        for k,v in self.__load_config(config, 'splunk').items():
+            self.splunk_config[k] = v
+
+
+
+        self.splunky = None
+        try:
+            self.splunky = Splunky(username=self.splunk_config['username'],
+                                   password=self.splunk_config['password'],
+                                   host=self.splunk_config['host'],
+                                   port=self.splunk_config['port'])
+        except SplunkyCannotConnect:
+            pass
 
     def __run_process(self, cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -52,7 +68,7 @@ class DailyReport(object):
     def __reformat_content_for_gmail(self, content):
         extractor = ReportExtractor(content)
         data = extractor.extract()
-        data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-smaller-transparent.png'
+        data['cloudreach_logo'] = 'https://s3-eu-west-1.amazonaws.com/splunk-dailyreport/cloudreach-logo-smaller-transparent.png'
         data['green_table_header'] = data['green_table'][0]
         data['green_table_rows'] = data['green_table'][1:]
         data['blue_table_header'] = data['blue_table'][0]
@@ -66,19 +82,15 @@ class DailyReport(object):
 
     def __get_daily_report_for_app(self, filepath):
         email_addresses, email_title = self.get_email_app_config(filepath)
+        index_name = self.get_index_app_config(filepath)
         if len(email_addresses) > 0:
-            url = self.get_url_to_homepage(filepath)
-            content = self.get_report(url, self.url_static, self.username, self.password)
-            if len(content) > 0:
-                content = self.__reformat_content_for_gmail(content)
-                self.__log(content)
-                for email in email_addresses:
-                    print "send report to email: %s" % email
-                    self.send_email(to=email, html_body=content, title=email_title)
+            content = self.get_report(index_name=index_name)
+            for email in email_addresses:
+                print "send report to email: %s" % email
+                self.send_email(to=email, html_body=content, title=email_title)
 #               print "send report to email: %s" % email_addresses
 #               self.send_email(BCC=email_addresses, html_body=content)
-            else:
-                print "content is empty"
+
 
     def __log(self, msg):
         with open( "dailyreport.html", "w" ) as f:
@@ -97,14 +109,6 @@ class DailyReport(object):
                 if os.path.isfile(file):
                     confFiles.append(file)
         return confFiles
-
-    def get_url_to_homepage(self, input_string):
-        url = None
-        if self.base_url:
-            match = re.search(r'/([^/]*)/local/dailyreport.conf$', input_string)
-            if match.group(1):
-                url = '%s/en-US/app/%s/awsManagedServicesHomepage' % (self.base_url, match.group(1))
-        return url
 
     def get_email_app_config(self, config_file):
         emails = []
@@ -127,12 +131,114 @@ class DailyReport(object):
                 pass
         return (emails, title)
 
-    def get_report(self, url='', url_static='', username='', password=''):
-        content = ''.join([line for line in self.__run_process(
-            ['%s/phantomjs/phantomjs' % self.home_folder, '--ignore-ssl-errors=yes',
-             '%s/renderHTML.js' % self.home_folder, url, url_static, username, password])]).strip()
-        content = re.sub(r'[\s]{2,}', r'\n', content, flags=re.M)
+    def get_index_app_config(self, config_file):
+        index_name = None
+        if os.path.isfile(config_file):
+            parser = ConfigParser.SafeConfigParser()
+            parser.read(config_file)
+
+            try:
+                index_name = parser.get('dailyreport', 'index_name')
+            except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+                pass
+
+        return index_name
+
+    def get_report(self, index_name):
+        # use splunky
+        content = ''
+        if self.splunky:
+            yellow_table_search = 'search index="client-{0}" sourcetype="cloudability" earliest=@d latest=now ' \
+                                  '| eval date = strftime(_time, "%B") ' \
+                                  '| stats max(total) as total by aws_account_number, date   ' \
+                                  '| eval total=if(total>0, total, 0.00) ' \
+                                  '| join type=left  aws_account_number [ search index="client-{0}" sourcetype="cloudability" earliest=-mon@d-1d latest=-mon@d ' \
+                                  '| dedup aws_account_number | eval total_2=if(total>0, total, 0.00) ' \
+                                  '| table aws_account_number, total_2 ] | table aws_account_number, total, date, total_2 ' \
+                                  '| eval total_2=if(total_2>=0, total_2, 0.00) ' \
+                                  '| rename aws_account_number as "AWS Account", total as "Costs", date as Date, total_2 as "Month Ago"'.format(index_name)
+            yellow_table_header = self.splunky.get_header(yellow_table_search)
+            yellow_table_results = self.splunky.search(search=yellow_table_search)
+
+            green_table_search =    'search index="client-{0}" source="ec2_elastic" earliest=@d latest=now() | dedup public_ip | stats count(eval(association_id!="None")) as value1, count(association_id) as value2 | eval label="Elastic IPs" ' \
+                                    '| eval value = value2 + " (unused: "+value1+")" ' \
+                                    '| append [ search '\
+                                    'index="client-{0}" source="ec2_instances" earliest=@d latest=now() | dedup instance_id | stats count(eval(state="running")) as value1a, count(eval(state="stopped")) as value1b, count(eval(state="terminated")) as value1c, count(state) as value2 | eval label="Instances" ' \
+                                    '| eval value=value2 + " (running: " + value1a + ", stopped: "+ value1b +", terminated: " + value1c + ")" | eval order=2 ] '\
+                                    '| append [ search ' \
+                                    'index="client-{0}" source="ec2_snapshots" earliest=@d latest=now() | dedup snapshot_id | stats count(eval(status="error")) as value1, count(snapshot_id) as value2 | eval label="No of EC2 snapshots" '\
+                                    '| eval value=value2 + " (error: " + value1 + ")" | eval order=3 ] ' \
+                                    '| append [ search '\
+                                    'index="client-{0}" source="ec2_snapshots" earliest=@d latest=now() | dedup snapshot_id | eval error_size=if(status="error", volume_size, 0) | stats sum(error_size) as value1, sum(volume_size) as value2 | eval label="Size of EC2 snapshots" ' \
+                                    '| eval suffix = "GB" '\
+                                    '| eval value=value2 + " (error: " + value1 + ")" | eval order=4 ] ' \
+                                    '| append [ search '\
+                                    'index="client-{0}" source="ec2_volumes" earliest=@d latest=now() | dedup volume_id | stats count(eval(status="in-use")) as value1a, count(eval(status="available")) as value1b, count(eval(status="error")) as value1c, count(volume_id) as value2 | eval label="No of volumes" ' \
+                                    '| eval value = value2 + " (available: " + value1b + ", in-use: " + value1a + ", error: " +value1c + ")" | eval order=5 ] '\
+                                    '| append [ search ' \
+                                    'index="client-{0}" source="ec2_volumes" earliest=@d latest=now() | dedup volume_id | eval size_in_use=if(status="in-use", size, 0) | eval size_avail=if(status="available", size, 0) | eval size_error=if(status="error", size, 0) | stats sum(size_in_use) as value1a, sum(size_avail) as value1b, sum(size_error) as value1c, sum(size) as value2 | eval label="Volumes Size" '\
+                                    '| eval suffix = "GB" ' \
+                                    '| eval value = value2 + " (available: " + value1b + ", in-use: " + value1a + ", error: " + value1c + ")"  | eval order =6 ] '\
+                                    '| appendcols [search index="client-{0}-si" report="diff" earliest=-1d@d latest=@d | dedup label | sort order| table label, value_1d, value_7d, value_30d  ] ' \
+                                    '| eval diff_1d = value2-value_1d '\
+                                    '| eval diff_7d = value2-value_7d ' \
+                                    '| eval diff_30d = value2-value_30d '\
+                                    '| eval suffix=if(order=4 OR order=6, "GB", "") ' \
+                                    '| diffformat fields="value,value_1d,value_7d,value_30d,diff_1d,diff_7d,diff_30d" signs="False,False,False,False" '\
+                                    '| eval ndiff_1d = value_1d + " (" + diff_1d + ")" ' \
+                                    '| eval ndiff_7d = value_7d + " (" + diff_7d + ")" '\
+                                    '| eval ndiff_30d = value_30d + " (" + diff_30d + ")" ' \
+                                    '| table label, value, ndiff_1d, ndiff_7d, ndiff_30d '\
+                                    '| rename label as "Item", value as "Today", ndiff_1d as "Yesterday (diff)", ndiff_7d as "Week Ago (diff)", ndiff_30d as "Month Ago (diff)"'.format(index_name)
+            green_table_results = self.splunky.search(search=green_table_search)
+            green_table_header = self.splunky.get_header(green_table_search)
+
+            blue_table_search = 'search index="client-{0}" source="ec2_instances" earliest=@d latest=now | dedup instance_id |  stats count(instance_id) as value_0d by instance_type | eval label=instance_type | '\
+'appendcols [ search  index="client-{0}" source="ec2_instances" earliest=-1d@d latest=@d | dedup instance_id | stats count(instance_id) as value_1d by instance_type ] | '\
+'appendcols [ search  index="client-{0}" source="ec2_instances" earliest=-7d@d latest=-6d@d | dedup instance_id | stats count(instance_id) as value_7d by instance_type ] | '\
+'appendcols [ search  index="client-{0}" source="ec2_instances" earliest=-30d@d latest=-29d@d | dedup instance_id | stats count(instance_id) as value_30d by instance_type ] '\
+'| eval value_1d = if(value_1d > 0, value_1d, 0) ' \
+'| eval value_7d = if(value_7d > 0, value_7d, 0) '\
+'| eval value_30d = if(value_30d > 0, value_30d, 0) '\
+'| eval diff_1d = value_0d - value_1d '\
+'| eval diff_7d = value_0d - value_7d '\
+'| eval diff_30d = value_0d - value_30d '\
+'| eval value_1d = value_1d + "(" + diff_1d + ")" '\
+'| eval value_7d = value_7d + "(" + diff_7d + ")" '\
+'| eval value_30d = value_30d + "(" + diff_30d + ")" '\
+'| table instance_type, value_0d, value_1d, value_7d, value_30d '\
+'| rename instance_type as "Instance Type", value_0d as Today, value_1d as "Yesterday (diff)", value_7d as "Week Ago (diff)", value_30d as "Month Ago (diff)"'.format(index_name)
+            blue_table_results = self.splunky.search(search=blue_table_search)
+            blue_table_header = self.splunky.get_header(blue_table_search)
+
+            data = { 'yellow_table_header':yellow_table_header,
+                     'yellow_table_rows':yellow_table_results,
+                     'green_table_header':green_table_header,
+                     'green_table_rows':green_table_results,
+                     'blue_table_header':blue_table_header,
+                     'blue_table_rows':blue_table_results}
+            template = '%s/static/template_splunk_email.html' % self.home_folder
+
+
+            content = self.create_report_from_template(data, template=template)
+            self.__log(content)
         return content
+
+    def create_report_from_template(self, data, template):
+        data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-smaller-transparent.png'
+
+        sum_yellow_table = 0
+        for row in data['yellow_table_rows']:
+            sum_yellow_table += float(row['Costs'])
+            row['Costs'] = '$%s' % row['Costs']
+            row['Month Ago'] = '$%s' % row['Month Ago']
+
+        data['sum_yellow_table'] = '$%s' % sum_yellow_table
+
+        fr=open(template,'r')
+        inputSource = fr.read()
+        template = Template(inputSource).render(data)
+        return template
 
     def send_email(self, to=None, BCC=None, html_body=None, title=None):
 #        message = Message(From=self.mailer_config['from'],To=to, BCC=BCC, charset='utf-8' )
@@ -162,12 +268,6 @@ class DailyReport(object):
 
 
 
-targetUrl = ''
-sessionKey = ''
-#content = ''.join([line for line in runProcess(['phantomjs/phantomjs', 'renderHTML.js', targetUrl, sessionKey])]).strip()
 
-#content = re.sub(r'[\s]{2,}', r'\n', content, flags=re.M)
-
-#print "content [%s]" % content
 
 
