@@ -3,6 +3,7 @@ import subprocess
 import re
 import ConfigParser
 import threading
+from MyFormat import MyFormat
 from jinja2.environment import Template
 from mailer.mailer import Message, Mailer
 from reportextractor import ReportExtractor
@@ -223,17 +224,34 @@ class DailyReport(object):
             content = self.create_report_from_template(data, template=template)
             self.__log(content)
         return content
+    def __formatDigit(self, digit):
+        digit = '%s' % digit
+        reversed = digit[::-1]
+        reversed_spaces = re.sub("(.{3})", "\\1 ", reversed)
+        normal_spaces = reversed_spaces[::-1].strip()
+        normal_spaces = normal_spaces.replace(' .', '.')
+        return normal_spaces
+
 
     def create_report_from_template(self, data, template):
         data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-smaller-transparent.png'
 
         sum_yellow_table = 0
+        previous_sum_yellow_table = 0
         for row in data['yellow_table_rows']:
             sum_yellow_table += float(row['Costs'])
+            previous_sum_yellow_table += float(row['Month Ago'])
             row['Costs'] = '$%s' % row['Costs']
             row['Month Ago'] = '$%s' % row['Month Ago']
 
+        diff_string = ''
+        if previous_sum_yellow_table > 0:
+            diff_in_sum = sum_yellow_table - previous_sum_yellow_table
+            if diff_in_sum != 0:
+                sign = '+' if diff_in_sum > 0 else '-'
+                diff_string = '( %s%s )' % ( sign, self.__formatDigit(diff_in_sum) )
         data['sum_yellow_table'] = '$%s' % sum_yellow_table
+        data['diff_sum_yellow_table'] = diff_string
 
         fr=open(template,'r')
         inputSource = fr.read()
