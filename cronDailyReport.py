@@ -27,8 +27,7 @@ class CronDailyReport(object):
 
     def run(self):
         self.load_config()
-        dr = DailyReport(home_folder=home_folder, splunk_home=self.splunk_home,  config=self.config_file,
-            username=self.splunk_username, password=self.splunk_password, url_static=self.url_static)
+        dr = DailyReport(splunk_home=self.splunk_home,  config=self.config_file)
         dr.do_daily_report()
 
 
