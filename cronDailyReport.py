@@ -17,8 +17,7 @@ class CronDailyReport(object):
             for x in parser.items('confidential'):
                 setattr(self, x[0], x[1])
         except ConfigParser.NoSectionError:
-            self.url = ''
-            self.url_static = ''
+
             self.splunk_username = ''
             self.splunk_password = ''
             self.splunk_home = ''
