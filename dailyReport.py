@@ -43,8 +43,8 @@ class DailyReport(object):
                                    password=self.splunk_config['password'],
                                    host=self.splunk_config['host'],
                                    port=self.splunk_config['port'])
-        except SplunkyCannotConnect:
-            pass
+        except SplunkyCannotConnect, e:
+            print "Cannot connect to splunk %s" % self.splunk_config
 
     def __run_process(self, cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -194,21 +194,11 @@ class DailyReport(object):
             green_table_results = self.splunky.search(search=green_table_search)
             green_table_header = self.splunky.get_header(green_table_search)
 
-            blue_table_search = 'search index="client-{0}" source="ec2_instances" earliest=@d latest=now | dedup instance_id |  stats count(instance_id) as value_0d by instance_type | eval label=instance_type | '\
-'appendcols [ search  index="client-{0}" source="ec2_instances" earliest=-1d@d latest=@d | dedup instance_id | stats count(instance_id) as value_1d by instance_type ] | '\
-'appendcols [ search  index="client-{0}" source="ec2_instances" earliest=-7d@d latest=-6d@d | dedup instance_id | stats count(instance_id) as value_7d by instance_type ] | '\
-'appendcols [ search  index="client-{0}" source="ec2_instances" earliest=-30d@d latest=-29d@d | dedup instance_id | stats count(instance_id) as value_30d by instance_type ] '\
-'| eval value_1d = if(value_1d > 0, value_1d, 0) ' \
-'| eval value_7d = if(value_7d > 0, value_7d, 0) '\
-'| eval value_30d = if(value_30d > 0, value_30d, 0) '\
-'| eval diff_1d = value_0d - value_1d '\
-'| eval diff_7d = value_0d - value_7d '\
-'| eval diff_30d = value_0d - value_30d '\
-'| eval value_1d = value_1d + "(" + diff_1d + ")" '\
-'| eval value_7d = value_7d + "(" + diff_7d + ")" '\
-'| eval value_30d = value_30d + "(" + diff_30d + ")" '\
-'| table instance_type, value_0d, value_1d, value_7d, value_30d '\
-'| rename instance_type as "Instance Type", value_0d as Today, value_1d as "Yesterday (diff)", value_7d as "Week Ago (diff)", value_30d as "Month Ago (diff)"'.format(index_name)
+            blue_table_search = 'search index="client-{0}" source="ec2_instances" earliest=@d latest=now | dedup instance_id |  stats count(instance_id) as value_0d by instance_type | eval label=instance_type' \
+'| join type=left instance_type [ search  index="client-{0}" source="ec2_instances" earliest=-1d@d latest=@d | dedup instance_id | stats count(instance_id) as value_1d by instance_type ] ' \
+'| join type=left instance_type [ search  index="client-{0}" source="ec2_instances" earliest=-7d@d latest=-6d@d | dedup instance_id | stats count(instance_id) as value_7d by instance_type ] '\
+'| join type=left instance_type [ search  index="client-{0}" source="ec2_instances" earliest=-30d@d latest=-29d@d | dedup instance_id | stats count(instance_id) as value_30d by instance_type ] '\
+'| eval value_1d = if(value_1d > 0, value_1d, 0) | eval value_7d = if(value_7d > 0, value_7d, 0) | eval value_30d = if(value_30d > 0, value_30d, 0) | eval diff_1d = value_0d - value_1d | eval diff_7d = value_0d - value_7d | eval diff_30d = value_0d - value_30d | eval value_1d = value_1d + "(" + diff_1d + ")" | eval value_7d = value_7d + "(" + diff_7d + ")" | eval value_30d = value_30d + "(" + diff_30d + ")" | table instance_type, value_0d, value_1d, value_7d, value_30d | rename instance_type as "Instance Type", value_0d as Today, value_1d as "Yesterday (diff)", value_7d as "Week Ago (diff)", value_30d as "Month Ago (diff)" '.format(index_name)
             blue_table_results = self.splunky.search(search=blue_table_search)
             blue_table_header = self.splunky.get_header(blue_table_search)
 
@@ -225,11 +215,16 @@ class DailyReport(object):
             self.__log(content)
         return content
     def __formatDigit(self, digit):
-        digit = '%s' % digit
-        reversed = digit[::-1]
-        reversed_spaces = re.sub("(.{3})", "\\1 ", reversed)
-        normal_spaces = reversed_spaces[::-1].strip()
-        normal_spaces = normal_spaces.replace(' .', '.')
+        normal_spaces = digit
+        rounded_digit = '%.2f' % float(digit)
+        match = re.search("([\d]+)(\.[\d]+)?", rounded_digit)
+        if match:
+            digit = match.group(1)
+            rest = match.group(2) if match.group(2) else ''
+            reversed = digit[::-1]
+            reversed_spaces = re.sub("(.{3})", "\\1 ", reversed)
+            normal_spaces = "%s%s" % (reversed_spaces[::-1].strip(), rest)
+
         return normal_spaces
 
 
@@ -275,10 +270,15 @@ class DailyReport(object):
         sender.send(message)
 
     def do_daily_report(self):
-        apps = self.get_apps()
-        for app in apps:
-            print "Found app: %s" % app
-            self.__get_daily_report_for_app(app)
+        if self.splunky:
+            apps = self.get_apps()
+            for app in apps:
+                print "Found app: %s" % app
+                self.__get_daily_report_for_app(app)
+
+        else:
+            print "Not connected to splunk."
+
 
 
 
