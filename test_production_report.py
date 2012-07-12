@@ -1,4 +1,5 @@
 import ConfigParser
+import logging
 import unittest
 from dailyreport import DailyReport
 
@@ -32,10 +33,11 @@ class DailyReportProductionDataTest(unittest.TestCase):
 
     def test_should_return_content_on_valid_connection_data(self):
         # update connection.conf
+#        logging.basicConfig(level=logging.DEBUG)
         self.load_config()
         dr = DailyReport(config='config/confidential.conf')
-        output = dr.get_report(index_name=self.index_name)
-        dr.send_email(to="jakub.zygmunt@cloudreach.co.uk", title="production test", html_body=output)
+        output = dr.get_report(index_name='spongegroup')
+#        dr.send_email(to="jakub.zygmunt@cloudreach.co.uk", title="production test", html_body=output)
         self.assertTrue(len(output) > 0)
 
 if __name__ == "__main__":
