@@ -8,6 +8,7 @@ from jinja2.environment import Template
 from mailer.mailer import Message, Mailer
 from reportextractor import ReportExtractor
 from splunky import Splunky, SplunkyCannotConnect
+import logging
 
 __author__ = 'jakub.zygmunt'
 
@@ -149,15 +150,15 @@ class DailyReport(object):
         # use splunky
         content = ''
         if self.splunky:
-            yellow_table_search = 'search index="client-{0}" sourcetype="cloudability" earliest=@d latest=now ' \
-                                  '| eval date = strftime(_time, "%B") ' \
-                                  '| stats max(total) as total by aws_account_number, date   ' \
-                                  '| eval total=if(total>0, total, 0.00) ' \
-                                  '| join type=left  aws_account_number [ search index="client-{0}" sourcetype="cloudability" earliest=-mon@d-1d latest=-mon@d ' \
-                                  '| dedup aws_account_number | eval total_2=if(total>0, total, 0.00) ' \
-                                  '| table aws_account_number, total_2 ] | table aws_account_number, total, date, total_2 ' \
-                                  '| eval total_2=if(total_2>=0, total_2, 0.00) ' \
-                                  '| rename aws_account_number as "AWS Account", total as "Costs", date as Date, total_2 as "Month Ago"'.format(index_name)
+            yellow_table_search = 'search index="client-{0}" sourcetype="cloudability" earliest=@d latest=now '\
+                     '| eval date = strftime(_time, "%B") | stats max(total) as total by aws_account_number, aws_account_name, date '\
+                     '| eval total=if(total>0, total, 0.00) '\
+                     '| join type=left  aws_account_number [ search index="client-{0}" sourcetype="cloudability" earliest=-mon@d-1d latest=-mon@d '\
+                     '| dedup aws_account_number | eval total_2=if(total>0, total, 0.00) '\
+                     '| table aws_account_number, total_2 ] '\
+                     '| table aws_account_name, total, date, total_2 '\
+                     '| eval total_2=if(total_2>=0, total_2, 0.00) '\
+                     '| rename aws_account_name as "AWS Account", total as "Costs", date as Date, total_2 as "Month Ago"'.format(index_name)
             yellow_table_header = self.splunky.get_header(yellow_table_search)
             yellow_table_results = self.splunky.search(search=yellow_table_search)
 
@@ -180,7 +181,7 @@ class DailyReport(object):
                                     'index="client-{0}" source="ec2_volumes" earliest=@d latest=now() | dedup volume_id | eval size_in_use=if(status="in-use", size, 0) | eval size_avail=if(status="available", size, 0) | eval size_error=if(status="error", size, 0) | stats sum(size_in_use) as value1a, sum(size_avail) as value1b, sum(size_error) as value1c, sum(size) as value2 | eval label="Volumes Size" '\
                                     '| eval suffix = "GB" ' \
                                     '| eval value = value2 + " (available: " + value1b + ", in-use: " + value1a + ", error: " + value1c + ")"  | eval order =6 ] '\
-                                    '| appendcols [search index="client-{0}-si" report="diff" earliest=-1d@d latest=@d | dedup label | sort order| table label, value_1d, value_7d, value_30d  ] ' \
+                                    '| join type=left label [search index="client-{0}-si" report="diff" earliest=-1d@d latest=@d | dedup label | sort order | eval label=if(label="elastic ip", "Elastic IPs", label) | table label, value_1d, value_7d, value_30d  ] ' \
                                     '| eval diff_1d = value2-value_1d '\
                                     '| eval diff_7d = value2-value_7d ' \
                                     '| eval diff_30d = value2-value_30d '\
@@ -209,10 +210,16 @@ class DailyReport(object):
                      'blue_table_header':blue_table_header,
                      'blue_table_rows':blue_table_results}
             template = '%s/static/template_splunk_email.html' % self.home_folder
+            logging.debug("yellow_table_search:\n%s" % yellow_table_search)
+            logging.debug("green_table_search:\n%s" % green_table_search)
+            logging.debug("blue_table_search:\n%s" % blue_table_search)
 
 
             content = self.create_report_from_template(data, template=template)
-            self.__log(content)
+            logger1 = logging.getLogger()
+            if logger1.level == logging.DEBUG:
+                logging.debug("writing template output to the file")
+                self.__log(content)
         return content
     def __formatDigit(self, digit):
         normal_spaces = digit
