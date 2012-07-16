@@ -13,3 +13,6 @@ real_data/
 mailer/
 jinja2/
 bs4/
+
+#exclude production test files
+test_production_*.py
