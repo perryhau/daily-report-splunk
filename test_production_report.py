@@ -33,10 +33,10 @@ class DailyReportProductionDataTest(unittest.TestCase):
 
     def test_should_return_content_on_valid_connection_data(self):
         # update connection.conf
-#        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
         self.load_config()
         dr = DailyReport(config='config/confidential.conf')
-        output = dr.get_report(index_name='spongegroup')
+        output = dr.get_report(index_name='goalline')
 #        dr.send_email(to="jakub.zygmunt@cloudreach.co.uk", title="production test", html_body=output)
         self.assertTrue(len(output) > 0)
 
