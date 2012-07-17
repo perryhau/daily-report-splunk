@@ -162,7 +162,7 @@ class DailyReport(object):
             yellow_table_header = self.splunky.get_header(yellow_table_search)
             yellow_table_results = self.splunky.search(search=yellow_table_search)
 
-            green_table_search =    'search index="client-{0}" source="ec2_elastic" earliest=@d latest=now() | dedup public_ip | stats count(eval(association_id!="None")) as value1, count(association_id) as value2 | eval label="Elastic IPs" ' \
+            green_table_search =    'search index="client-{0}" source="ec2_elastic" earliest=@d latest=now() | dedup public_ip | stats count(eval(attached!="True")) as value1, count(association_id) as value2 | eval label="Elastic IPs" ' \
                                     '| eval value = value2 + " (unused: "+value1+")" ' \
                                     '| append [ search '\
                                     'index="client-{0}" source="ec2_instances" earliest=@d latest=now() | dedup instance_id | stats count(eval(state="running")) as value1a, count(eval(state="stopped")) as value1b, count(eval(state="terminated")) as value1c, count(state) as value2 | eval label="Instances" ' \
