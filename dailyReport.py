@@ -1,4 +1,5 @@
 import os
+from smtplib import SMTPDataError
 import subprocess
 import re
 import ConfigParser
@@ -273,8 +274,10 @@ class DailyReport(object):
                         use_tls=True if self.mailer_config['use_tls'] == '1' else False,
                         usr=self.mailer_config['auth_username'],
                         pwd=self.mailer_config['auth_password'])
-
-        sender.send(message)
+        try:
+            sender.send(message)
+        except SMTPDataError as e:
+            print "%s - %s" % (email_to, e)
 
     def do_daily_report(self):
         if self.splunky:
