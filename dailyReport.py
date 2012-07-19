@@ -277,7 +277,7 @@ class DailyReport(object):
         try:
             sender.send(message)
         except SMTPDataError as e:
-            print "%s - %s" % (email_to, e)
+            print "%s - %s" % (to, e)
 
     def do_daily_report(self):
         if self.splunky:
