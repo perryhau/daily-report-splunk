@@ -90,7 +90,7 @@ class Splunky(object):
     @staticmethod
     def get_renames(search):
         renames = {}
-        match = re.search(r'.*\| ?rename ([a-zA-Z0-9_, "()]+)', search)
+        match = re.search(r'.*\| ?rename ([a-zA-Z0-9_, "()\-]+)', search)
         if match:
             str = match.group(1)
             fields = re.findall('([a-zA-Z0-9_]+) as (?:"([^"]+)"|([a-zA-Z0-9_]+))', str)

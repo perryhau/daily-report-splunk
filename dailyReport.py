@@ -1,3 +1,4 @@
+import locale
 import os
 from smtplib import SMTPDataError
 import subprocess
@@ -5,6 +6,9 @@ import re
 import ConfigParser
 import threading
 from MyFormat import MyFormat
+import time
+import calendar
+import datetime
 from jinja2.environment import Template
 from mailer.mailer import Message, Mailer
 from reportextractor import ReportExtractor
@@ -147,6 +151,25 @@ class DailyReport(object):
 
         return index_name
 
+    def compute_additional_values_yellow_table(self, table_header, table_results):
+        logging.debug(table_header)
+        table_header.remove('last_month_total')
+        table_header.remove('last_month_date')
+        table_header.append('Estimation')
+        table_header.append('Est diff')
+
+        now = datetime.datetime.now()
+        last_month = time.strptime(table_results[0]['last_month_date'], "%Y/%m/%d")
+        last_month_no, last_month_days = calendar.monthrange(last_month.tm_year, last_month.tm_mon)
+        month_no, month_days = calendar.monthrange(now.year, now.month)
+        for row in table_results:
+            estimation = ((int(float(row['last_month_total']) * 100) / last_month_days) * month_days )/ 100
+            row['Estimation'] = estimation
+            estimation_current_day = ((int(float(row['last_month_total']) * 100) / last_month_days) * now.day )/ 100
+
+            row['Est diff'] = float(row['Costs']) - estimation_current_day
+        logging.debug(table_results)
+
     def get_report(self, index_name):
         # use splunky
         content = ''
@@ -157,42 +180,38 @@ class DailyReport(object):
                      '| join type=left  aws_account_number [ search index="client-{0}" sourcetype="cloudability" earliest=-mon@d-1d latest=-mon@d '\
                      '| dedup aws_account_number | eval total_2=if(total>0, total, 0.00) '\
                      '| table aws_account_number, total_2 ] '\
-                     '| table aws_account_name, total, date, total_2 '\
-                     '| eval total_2=if(total_2>=0, total_2, 0.00) '\
-                     '| rename aws_account_name as "AWS Account", total as "Costs", date as Date, total_2 as "Month Ago"'.format(index_name)
+                     '| join type=left aws_account_number [ search index="client-{0}" sourcetype="cloudability_monthly" earliest=-1mon@mon latest=@mon ' \
+                     '| eval last_month_date= strftime(_time, "%Y/%m/%d") | rename total as last_month_total ' \
+                     '| table aws_account_number, aws_account_name, last_month_total,last_month_date ] ' \
+                     '| table aws_account_name, total, date, total_2, last_month_total, last_month_date ' \
+                     '| eval total_2=if(total_2>=0, total_2, 0.00) ' \
+                     '| rename aws_account_name as "AWS Account", total as "Costs", date as Date, total_2 as "-30d"'.format(index_name)
             yellow_table_header = self.splunky.get_header(yellow_table_search)
             yellow_table_results = self.splunky.search(search=yellow_table_search)
+            self.compute_additional_values_yellow_table(table_header=yellow_table_header, table_results=yellow_table_results)
 
             green_table_search =    'search index="client-{0}" source="ec2_elastic" earliest=@d latest=now() | dedup public_ip | stats count(eval(attached!="True")) as value1, count(association_id) as value2 | eval label="Elastic IPs" ' \
-                                    '| eval value = value2 + " (unused: "+value1+")" ' \
+                                    '| eval value = value2 + "<br />(unused: "+value1+")" ' \
                                     '| append [ search '\
                                     'index="client-{0}" source="ec2_instances" earliest=@d latest=now() | dedup instance_id | stats count(eval(state="running")) as value1a, count(eval(state="stopped")) as value1b, count(eval(state="terminated")) as value1c, count(state) as value2 | eval label="Instances" ' \
-                                    '| eval value=value2 + " (running: " + value1a + ", stopped: "+ value1b +", terminated: " + value1c + ")" | eval order=2 ] '\
+                                    '| eval value=value2 + "<br />(run: " + value1a + ", stop: "+ value1b +", term: " + value1c + ")" | eval order=2 ] '\
                                     '| append [ search ' \
                                     'index="client-{0}" source="ec2_snapshots" earliest=@d latest=now() | dedup snapshot_id | stats count(eval(status="error")) as value1, count(snapshot_id) as value2 | eval label="No of EC2 snapshots" '\
-                                    '| eval value=value2 + " (error: " + value1 + ")" | eval order=3 ] ' \
+                                    '| eval value=value2 + "<br />(error: " + value1 + ")" | eval order=3 ] ' \
                                     '| append [ search '\
                                     'index="client-{0}" source="ec2_snapshots" earliest=@d latest=now() | dedup snapshot_id | eval error_size=if(status="error", volume_size, 0) | stats sum(error_size) as value1, sum(volume_size) as value2 | eval label="Size of EC2 snapshots" ' \
                                     '| eval suffix = "GB" '\
-                                    '| eval value=value2 + " (error: " + value1 + ")" | eval order=4 ] ' \
+                                    '| eval value=value2 + "<br />(error: " + value1 + ")" | eval order=4 ] ' \
                                     '| append [ search '\
                                     'index="client-{0}" source="ec2_volumes" earliest=@d latest=now() | dedup volume_id | stats count(eval(status="in-use")) as value1a, count(eval(status="available")) as value1b, count(eval(status="error")) as value1c, count(volume_id) as value2 | eval label="No of volumes" ' \
-                                    '| eval value = value2 + " (available: " + value1b + ", in-use: " + value1a + ", error: " +value1c + ")" | eval order=5 ] '\
+                                    '| eval value = value2 + "<br />(avail: " + value1b + ", use: " + value1a + ", err: " +value1c + ")" | eval order=5 ] '\
                                     '| append [ search ' \
                                     'index="client-{0}" source="ec2_volumes" earliest=@d latest=now() | dedup volume_id | eval size_in_use=if(status="in-use", size, 0) | eval size_avail=if(status="available", size, 0) | eval size_error=if(status="error", size, 0) | stats sum(size_in_use) as value1a, sum(size_avail) as value1b, sum(size_error) as value1c, sum(size) as value2 | eval label="Volumes Size" '\
                                     '| eval suffix = "GB" ' \
-                                    '| eval value = value2 + " (available: " + value1b + ", in-use: " + value1a + ", error: " + value1c + ")"  | eval order =6 ] '\
+                                    '| eval value = value2 + "<br />(avail: " + value1b + ", use: " + value1a + ", err: " + value1c + ")"  | eval order =6 ] '\
                                     '| join type=left label [search index="client-{0}-si" report="diff" earliest=-1d@d latest=@d | dedup label | sort order | eval label=if(label="elastic ip", "Elastic IPs", label) | table label, value_1d, value_7d, value_30d  ] ' \
-                                    '| eval diff_1d = value2-value_1d '\
-                                    '| eval diff_7d = value2-value_7d ' \
-                                    '| eval diff_30d = value2-value_30d '\
-                                    '| eval suffix=if(order=4 OR order=6, "GB", "") ' \
-                                    '| diffformat fields="value,value_1d,value_7d,value_30d,diff_1d,diff_7d,diff_30d" signs="False,False,False,False" '\
-                                    '| eval ndiff_1d = value_1d + " (" + diff_1d + ")" ' \
-                                    '| eval ndiff_7d = value_7d + " (" + diff_7d + ")" '\
-                                    '| eval ndiff_30d = value_30d + " (" + diff_30d + ")" ' \
-                                    '| table label, value, ndiff_1d, ndiff_7d, ndiff_30d '\
-                                    '| rename label as "Item", value as "Today", ndiff_1d as "Yesterday (diff)", ndiff_7d as "Week Ago (diff)", ndiff_30d as "Month Ago (diff)"'.format(index_name)
+                                    '| table label, value, value2, value_1d, value_7d, value_30d '\
+                                    '| rename label as "Item", value as "Today", value_1d as "-1d (diff)", value_7d as "-7d (diff)", value_30d as "-30d (diff)"'.format(index_name)
             green_table_results = self.splunky.search(search=green_table_search)
             green_table_header = self.splunky.get_header(green_table_search)
 
@@ -200,7 +219,8 @@ class DailyReport(object):
 '| join type=left instance_type [ search  index="client-{0}" source="ec2_instances" earliest=-1d@d latest=@d | dedup instance_id | stats count(instance_id) as value_1d by instance_type ] ' \
 '| join type=left instance_type [ search  index="client-{0}" source="ec2_instances" earliest=-7d@d latest=-6d@d | dedup instance_id | stats count(instance_id) as value_7d by instance_type ] '\
 '| join type=left instance_type [ search  index="client-{0}" source="ec2_instances" earliest=-30d@d latest=-29d@d | dedup instance_id | stats count(instance_id) as value_30d by instance_type ] '\
-'| eval value_1d = if(value_1d > 0, value_1d, 0) | eval value_7d = if(value_7d > 0, value_7d, 0) | eval value_30d = if(value_30d > 0, value_30d, 0) | eval diff_1d = value_0d - value_1d | eval diff_7d = value_0d - value_7d | eval diff_30d = value_0d - value_30d | eval value_1d = value_1d + "(" + diff_1d + ")" | eval value_7d = value_7d + "(" + diff_7d + ")" | eval value_30d = value_30d + "(" + diff_30d + ")" | table instance_type, value_0d, value_1d, value_7d, value_30d | rename instance_type as "Instance Type", value_0d as Today, value_1d as "Yesterday (diff)", value_7d as "Week Ago (diff)", value_30d as "Month Ago (diff)" '.format(index_name)
+'| eval value_1d = if(value_1d > 0, value_1d, 0) | eval value_7d = if(value_7d > 0, value_7d, 0) | eval value_30d = if(value_30d > 0, value_30d, 0) | eval diff_1d = value_0d - value_1d | eval diff_7d = value_0d - value_7d | eval diff_30d = value_0d - value_30d | eval value_1d = value_1d + "(" + diff_1d + ")" | eval value_7d = value_7d + "(" + diff_7d + ")" | eval value_30d = value_30d + "(" + diff_30d + ")" | table instance_type, value_0d, value_1d, value_7d, value_30d ' \
+'| rename instance_type as "Instance Type", value_0d as Today, value_1d as "-1d (diff)", value_7d as "-7d (diff)", value_30d as "-30d (diff)" '.format(index_name)
             blue_table_results = self.splunky.search(search=blue_table_search)
             blue_table_header = self.splunky.get_header(blue_table_search)
 
@@ -219,7 +239,7 @@ class DailyReport(object):
             content = self.create_report_from_template(data, template=template)
             logger1 = logging.getLogger()
             if logger1.level == logging.DEBUG:
-                logging.debug("writing template output to the file")
+                logger1.debug("writing template output to the file")
                 self.__log(content)
         return content
     def __formatDigit(self, digit):
@@ -235,18 +255,43 @@ class DailyReport(object):
 
         return normal_spaces
 
+    def __sizeof_fmt(self, num):
+        # from SO. we have only one element here becase min value for num is 1 GB
+        num = float(num)
+        for x in ['GB']:
+            if num < 1024.0:
+                return "%3.1f %s" % (num, x)
+            num /= 1024.0
+        return "%3.1f %s" % (num, 'TB')
+
+    def __get_diff(self, new_value, old_value):
+        difference = int(float(new_value) - float(old_value))
+        sign = "-" if difference < 0 else "+" if difference > 0 else ""
+        return "%s%s" % (sign, abs(difference))
 
     def create_report_from_template(self, data, template):
         data['cloudreach_logo'] = 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-smaller-transparent.png'
 
+
+        ### modify yellow table
         sum_yellow_table = 0
         previous_sum_yellow_table = 0
+        fields = ['Costs', '-30d', 'Estimation', 'Est diff']
+        locale.setlocale( locale.LC_MONETARY, 'en_US.UTF-8')
         for row in data['yellow_table_rows']:
             sum_yellow_table += float(row['Costs'])
-            previous_sum_yellow_table += float(row['Month Ago'])
-            row['Costs'] = '$%s' % row['Costs']
-            row['Month Ago'] = '$%s' % row['Month Ago']
+            previous_sum_yellow_table += float(row['-30d'])
+            for f in fields:
+                row[f] = locale.currency(float(row[f]), grouping=True)
 
+        data['yellow_table_format'] =  {
+            'AWS Account' : { 'align' : 'left', 'style': 'padding-left: 2%'},
+            'Costs' : { 'align' : 'right', 'style': 'padding-right: 2%'},
+            'Date' : { 'align' : 'left', 'style': 'padding-left: 5%'},
+            '-30d' : { 'align' : 'right', 'style': 'padding-right: 2%'},
+            'Estimation' : { 'align' : 'right', 'style': 'padding-right: 2%'},
+            'Est diff' : { 'align' : 'right', 'style': 'padding-right: 2%'},
+        }
         diff_string = ''
         if previous_sum_yellow_table > 0:
             diff_in_sum = sum_yellow_table - previous_sum_yellow_table
@@ -255,6 +300,33 @@ class DailyReport(object):
                 diff_string = '( %s%s )' % ( sign, self.__formatDigit(diff_in_sum) )
         data['sum_yellow_table'] = '$%s' % sum_yellow_table
         data['diff_sum_yellow_table'] = diff_string
+
+        ### modify green table
+        data['green_table_header'].remove('value2')
+        fields_to_modify = ['-1d (diff)', '-7d (diff)', '-30d (diff)']
+        def replace_in_string(match):
+            return self.__sizeof_fmt(match.group(0))
+
+        for row in data['green_table_rows']:
+            m = re.findall(r"\bsize\b", row['Item'], re.IGNORECASE)
+
+            for field in fields_to_modify:
+                get_number = re.search(r"^([0-9.]+)", row[field])
+
+                if get_number:
+                    number = get_number.group(0)
+                    row[field] = "%s<br/>(%s)" % (row[field], self.__get_diff(row['value2'], number))
+
+            if m:
+                row['Today'] = re.sub(r'([0-9]+)', replace_in_string, row['Today'])
+                for f in fields_to_modify:
+                    #row[f] = self.__sizeof_fmt(row[f])
+                    row[f] = re.sub(r'([0-9]+)', replace_in_string, row[f])
+
+            # add diff to values
+
+
+
 
         fr=open(template,'r')
         inputSource = fr.read()
