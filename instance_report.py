@@ -100,12 +100,25 @@ class InstanceReport(object):
 
         return results
 
+    def fix_utf8(self, list):
+        new_list = []
+        for element in list:
+            try:
+                new_map = {k:v.decode("ascii", "ignore") for k,v in element.iteritems()}
+            except UnicodeDecodeError:
+                print element
+                raise Exception
+            new_list.append(new_map)
+        return new_list
+
     def get_report(self, app_folder):
         if self.splunky:
             index, title, emails, tags_map = self.load_app_config(app_folder=app_folder)
             if len(emails):
                 header, instances = self.do_search(index=index, tags=tags_map)
                 invalid_instances = self.filter_results(search_results=instances, tags_map=tags_map)
+                invalid_instances = self.fix_utf8(list=invalid_instances)
+                self.logger.debug(invalid_instances)
                 report_html = self.create_report_from_template(header, invalid_instances, 'static/template_instance_alerts.html')
                 self.send_emails(emails, title, report_html)
                 self.__log(report_html)

@@ -83,9 +83,11 @@
                                                         {% for row in yellow_table_rows %}
                                                         <tr style="background-color: {{ loop.cycle('#FFF8DB', '')}}">
                                                             {% for cell in yellow_table_header %}
-                                                                <td align="center"
-                                                                    style="width: 33%;padding: 9px 2px;border-bottom: 1px solid #DDDDDD;font-weight: 100;border-collapse: collapse;">
+                                                                {% set format = yellow_table_format[cell] %}
+                                                                <td align="{{ format['align'] }}"
+                                                                    style="width: 16%;padding: 9px 2px; {{ format['style'] }}; border-bottom: 1px solid #DDDDDD;font-weight: 100;border-collapse: collapse; white-space:nowrap;">
                                                                     {{ row[cell]}}
+
                                                                 </td>
                                                             {% endfor %}
                                                         </tr>
@@ -96,8 +98,12 @@
                                                 </td>
                                             </tr>
                                             </tbody>
+
                                         </table>
                                     </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top: 0;">Estimation = (last month total cost / day ) * days in the current month</td>
                                 </tr>
                             </table>
                         </td>
@@ -110,7 +116,7 @@
                                     <td valign="top"
                                         style="border-collapse: collapse;background-color: #FFFFFF;">
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef; font-size: 9px; ">
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef; font-size: 14px; ">
                                             <tbody>
                                             <tr>
                                                 {% for cell in green_table_header %}
@@ -147,7 +153,7 @@
                                     <td valign="top"
                                         style="border-collapse: collapse;background-color: #FFFFFF;">
                                         <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef; font-size: 9px; ">
+                                               style="border-right: 3px solid #efefef; border-bottom: 3px solid #efefef; font-size: 14px; ">
                                             <tbody>
                                             <tr>
                                                 {% for cell in blue_table_header %}
