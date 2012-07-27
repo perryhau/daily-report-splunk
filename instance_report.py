@@ -45,9 +45,10 @@ class InstanceReport(object):
 
     def create_search_string(self, index, tags):
         tag_names_string = ', '.join(tags.keys())
-        search_string = 'search index="client-{0}" source="ec2_instances" earliest=@d latest=now |'\
-                        ' dedup instance_id |'\
-                        ' table instance_id, aws_account_name, placement, instance_type, {1}'.format(index, tag_names_string)
+        search_string = 'search index="client-{0}" source="ec2_new_instances" earliest=-24h latest=now |'\
+                        'regex _raw!=tag_aws:autoscaling | dedup instance_id |'\
+                        ' table instance_id, aws_account_name, placement, instance_type, {1} |'\
+                        'sort +aws_account_name, +tag_ProductKey, +tag_Name'.format(index, tag_names_string)
         return search_string
 
     def do_search(self, index, tags):
@@ -132,6 +133,7 @@ class InstanceReport(object):
             'cloudreach_logo' : 'https://cr-splunk-1.cloudreach.co.uk:8000/en-US/static/app/cloudreach-modules/cloudreach-logo-smaller-transparent.png',
             'green_table_header' : header,
             'green_table_rows' : rows,
+            'number_results' : len(rows)
             }
 
         fr=open(template,'r')
