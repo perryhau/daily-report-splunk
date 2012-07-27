@@ -59,11 +59,17 @@
                         <td>
                             <table border="0" cellpadding="40" cellspacing="0" width="100%"
                                    style="background-color: #fff; ">
-                                <tr style="font-size: 24px; font-weight:bold;">
+                                <tr>
                                     <td>
-                                        EC2 Instance Alerts in AWS
+                                        <h1 style="font-size: 24px; font-weight:bold;">EC2 Instance Alerts in AWS</h1>
+                                        {% if number_results > 0 %}
+                                        There are {{ number_results }} new instances that need to be reviewed.
+                                        {% else %}
+                                        There are no new instances.
+                                        {% endif %}
                                     </td>
                                 </tr>
+
                                 <tr>
                                     <td valign="top"
                                         style="border-collapse: collapse;background-color: #FFFFFF;">
