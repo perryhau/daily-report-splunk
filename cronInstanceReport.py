@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import ConfigParser
 from argparse import ArgumentParser
 import os
@@ -44,8 +45,8 @@ class CronInstanceReport(object):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Load historic cloudability data")
-    parser.add_argument("-a", "--app_folder", action="store", help="Location of splunk apps folder", required=True)
     parser.add_argument("-c", "--config", action="store", help="Location of splunk/mailer config file",  required=True)
+    parser.add_argument("-a", "--app_folder", action="store", help="Location of splunk apps folder", required=True)
 
     args = parser.parse_args()
 
