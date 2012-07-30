@@ -1,5 +1,6 @@
 import logging
 import ConfigParser
+import os
 from jinja2.environment import Template
 from mailer.mailer import Message, Mailer
 from splunky import SplunkyCannotConnect, Splunky
@@ -10,6 +11,7 @@ __author__ = 'jakub.zygmunt'
 class InstanceReport(object):
     def __init__(self, config):
         self.logger = logging.getLogger(type(self).__name__)
+        self.base_dir = os.path.dirname(__file__)
 
         self.mailer_config = {}
         for k,v in self.__load_config(config, 'email').items():
@@ -120,7 +122,8 @@ class InstanceReport(object):
                 invalid_instances = self.filter_results(search_results=instances, tags_map=tags_map)
                 invalid_instances = self.fix_utf8(list=invalid_instances)
                 self.logger.debug(invalid_instances)
-                report_html = self.create_report_from_template(header, invalid_instances, 'static/template_instance_alerts.html')
+                template = '%s/static/template_instance_alerts.html' % self.base_dir
+                report_html = self.create_report_from_template(header, invalid_instances, template)
                 self.send_emails(emails, title, report_html)
                 self.__log(report_html)
             else:
@@ -142,8 +145,11 @@ class InstanceReport(object):
         return template
 
     def __log(self, msg):
-        with open( "instance_report.html", "w" ) as f:
-            f.write( msg + "\n")
+        try:
+            with open( "instance_report.html", "w" ) as f:
+                f.write( msg + "\n")
+        except IOError:
+            pass
 
     def send_emails(self, emails, title, content):
         for email in emails:
