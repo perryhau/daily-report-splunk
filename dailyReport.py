@@ -19,7 +19,7 @@ __author__ = 'jakub.zygmunt'
 
 class DailyReport(object):
 
-    def __init__(self, home_folder=None, splunk_home=None, host=None, port=None, config=None, username='', password=''):
+    def __init__(self, home_folder=None, splunk_home=None, host=None, port=None, config=None, username='', password='', no_email=True, debug=False):
         '''
         home_folder - base folder of the script, used to find HTML templates
         splunk_home - base splunk folder
@@ -27,6 +27,8 @@ class DailyReport(object):
         '''
         self.home_folder = home_folder if home_folder is not None else self.__get_home_folder()
         self.splunk_home = '.' if splunk_home is None else splunk_home
+        self.no_email = True if no_email else False
+
         # load default config
         default_mailer_config = '%s/etc/system/default/alert_actions.conf' % self.splunk_home
         self.mailer_config = self.__load_config(config_file=default_mailer_config, section='email')
@@ -51,6 +53,12 @@ class DailyReport(object):
                                    port=self.splunk_config['port'])
         except SplunkyCannotConnect, e:
             print "Cannot connect to splunk %s" % self.splunk_config
+
+        logging.basicConfig()
+        self.LOG = logging.getLogger(__name__)
+
+        if debug:
+            self.LOG.setLevel(logging.DEBUG)
 
     def __run_process(self, cmd):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -90,13 +98,16 @@ class DailyReport(object):
     def __get_daily_report_for_app(self, filepath):
         email_addresses, email_title = self.get_email_app_config(filepath)
         index_name = self.get_index_app_config(filepath)
-        if len(email_addresses) > 0:
-            content = self.get_report(index_name=index_name)
+
+        content = self.get_report(index_name=index_name)
+        if len(email_addresses) > 0 and not self.no_email:
             for email in email_addresses:
                 print "send report to email: %s" % email
                 self.send_email(to=email, html_body=content, title=email_title)
 #               print "send report to email: %s" % email_addresses
 #               self.send_email(BCC=email_addresses, html_body=content)
+        else:
+            print "not sending email. Email addresses: %s, no_email flag: %s" % (len(email_addresses), self.no_email)
 
 
     def __log(self, msg):
@@ -107,11 +118,13 @@ class DailyReport(object):
         path = '/'.join(os.path.abspath(__file__).split('/')[:-1])
         return path
 
-    def get_apps(self):
+    def get_apps(self, filter_name = None):
         appsFolder = "%s/etc/apps" % self.splunk_home
         confFiles = []
         if os.path.exists(appsFolder):
             for filename in os.listdir(appsFolder):
+                if filter_name and not filter_name.lower() in filename.lower():
+                    continue
                 file = "%s/%s/local/dailyreport.conf" % (appsFolder, filename)
                 if os.path.isfile(file):
                     confFiles.append(file)
@@ -152,23 +165,31 @@ class DailyReport(object):
         return index_name
 
     def compute_additional_values_yellow_table(self, table_header, table_results):
-        logging.debug(table_header)
+        self.LOG.debug(table_header)
         table_header.remove('last_month_total')
         table_header.remove('last_month_date')
         table_header.append('Estimation')
         table_header.append('Est diff')
 
         now = datetime.datetime.now()
-        last_month = time.strptime(table_results[0]['last_month_date'], "%Y/%m/%d")
-        last_month_no, last_month_days = calendar.monthrange(last_month.tm_year, last_month.tm_mon)
-        month_no, month_days = calendar.monthrange(now.year, now.month)
-        for row in table_results:
-            estimation = ((int(float(row['last_month_total']) * 100) / last_month_days) * month_days )/ 100
-            row['Estimation'] = estimation
-            estimation_current_day = ((int(float(row['last_month_total']) * 100) / last_month_days) * now.day )/ 100
+        try:
+            last_month = time.strptime(table_results[0].get('last_month_date',''), "%Y/%m/%d")
+            last_month_no, last_month_days = calendar.monthrange(last_month.tm_year, last_month.tm_mon)
+            month_no, month_days = calendar.monthrange(now.year, now.month)
+            for row in table_results:
+                try:
+                    estimation = ((int(float(row['last_month_total']) * 100) / last_month_days) * month_days )/ 100
+                    row['Estimation'] = estimation
+                    estimation_current_day = ((int(float(row['last_month_total']) * 100) / last_month_days) * now.day )/ 100
 
-            row['Est diff'] = float(row['Costs']) - estimation_current_day
-        logging.debug(table_results)
+                    row['Est diff'] = float(row['Costs']) - estimation_current_day
+                except KeyError:
+                    row['Estimation'] = row['Est diff'] = 0
+        except ValueError:
+            for row in table_results:
+                row['Estimation'] = row['Est diff'] = '0'
+
+        self.LOG.debug(table_results)
 
     def get_report(self, index_name):
         # use splunky
@@ -188,7 +209,10 @@ class DailyReport(object):
                      '| rename aws_account_name as "AWS Account", total as "Costs", date as Date, total_2 as "-30d"'.format(index_name)
             yellow_table_header = self.splunky.get_header(yellow_table_search)
             yellow_table_results = self.splunky.search(search=yellow_table_search)
-            self.compute_additional_values_yellow_table(table_header=yellow_table_header, table_results=yellow_table_results)
+            self.LOG.debug("yellow_table_header:\n%s" % yellow_table_header)
+            self.LOG.debug("yellow_table_search:\n%s" % yellow_table_search)
+            if len(yellow_table_results) > 0:
+                self.compute_additional_values_yellow_table(table_header=yellow_table_header, table_results=yellow_table_results)
 
             green_table_search =    'search index="client-{0}" source="ec2_elastic" earliest=@d latest=now() | dedup public_ip | stats count(eval(attached!="True")) as value1, count(association_id) as value2 | eval label="Elastic IPs" ' \
                                     '| eval value = value2 + "<br />(unused: "+value1+")" ' \
@@ -231,15 +255,15 @@ class DailyReport(object):
                      'blue_table_header':blue_table_header,
                      'blue_table_rows':blue_table_results}
             template = '%s/static/template_splunk_email.html' % self.home_folder
-            logging.debug("yellow_table_search:\n%s" % yellow_table_search)
-            logging.debug("green_table_search:\n%s" % green_table_search)
-            logging.debug("blue_table_search:\n%s" % blue_table_search)
+            self.LOG.debug("green_table_header:\n%s" % green_table_header)
+            self.LOG.debug("green_table_search:\n%s" % green_table_search)
+            self.LOG.debug("blue_table_header:\n%s" % blue_table_header)
+            self.LOG.debug("blue_table_search:\n%s" % blue_table_search)
 
 
             content = self.create_report_from_template(data, template=template)
-            logger1 = logging.getLogger()
-            if logger1.level == logging.DEBUG:
-                logger1.debug("writing template output to the file")
+            if self.LOG.level == logging.DEBUG:
+                self.LOG.debug("writing template output to the file")
                 self.__log(content)
         return content
     def __formatDigit(self, digit):
@@ -282,7 +306,10 @@ class DailyReport(object):
             sum_yellow_table += float(row['Costs'])
             previous_sum_yellow_table += float(row['-30d'])
             for f in fields:
-                row[f] = locale.currency(float(row[f]), grouping=True)
+                try:
+                    row[f] = locale.currency(float(row[f]), grouping=True)
+                except (ValueError, KeyError):
+                    pass
 
         data['yellow_table_format'] =  {
             'AWS Account' : { 'align' : 'left', 'style': 'padding-left: 2%'},
@@ -311,7 +338,7 @@ class DailyReport(object):
             m = re.findall(r"\bsize\b", row['Item'], re.IGNORECASE)
 
             for field in fields_to_modify:
-                get_number = re.search(r"^([0-9.]+)", row[field])
+                get_number = re.search(r"^([0-9.]+)", row.get(field, ''))
 
                 if get_number:
                     number = get_number.group(0)
@@ -351,9 +378,11 @@ class DailyReport(object):
         except SMTPDataError as e:
             print "%s - %s" % (to, e)
 
-    def do_daily_report(self):
+    def do_daily_report(self, filter_name=None):
         if self.splunky:
-            apps = self.get_apps()
+            if filter_name:
+                print "Filter apps to: [%s]" % filter_name
+            apps = self.get_apps(filter_name=filter_name)
             for app in apps:
                 print "Found app: %s" % app
                 self.__get_daily_report_for_app(app)
