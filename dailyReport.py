@@ -348,7 +348,7 @@ class DailyReport(object):
                 row['Today'] = re.sub(r'([0-9]+)', replace_in_string, row['Today'])
                 for f in fields_to_modify:
                     #row[f] = self.__sizeof_fmt(row[f])
-                    row[f] = re.sub(r'([0-9]+)', replace_in_string, row[f])
+                    row[f] = re.sub(r'([0-9]+)', replace_in_string, row.get(f, '0'))
 
             # add diff to values
 
