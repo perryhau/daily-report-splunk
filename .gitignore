@@ -20,5 +20,5 @@ bs4/
 #exclude production test files
 test_production_*.py
 test_totalreport.py
-
+test_real_data.py
 *.html
