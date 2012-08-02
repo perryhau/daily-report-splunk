@@ -1,0 +1,841 @@
+<html>
+<style type="text/css">
+body {
+    font-family: "VegurLight", "Helvetica Neue", "Helvetica", Arial, sans-serif;
+    background-color: #cccccc;
+    font-size: 16px;
+    line-height: 2em;
+
+}
+
+.container {
+    width: 640px;
+    margin: 0 auto;
+    background-color: rgb(247, 247, 247);
+    padding: 40px;
+}
+
+
+.container_12 {
+    margin: 40px;
+}
+
+
+table {
+    line-height: 2em;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+@font-face {
+    font-family: "VegurLight";
+    src: url("fonts/Vegur-Light.otf") format("opentype");
+}
+
+@font-face {
+    font-family: "VegurLight";
+    src: url("fonts/Vegur-Medium.otf") format("opentype");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "VegurRegular";
+    src: url("fonts/Vegur-Regular.otf") format("opentype");
+}
+
+.cloudreach-logo {
+    width: 650px;
+    padding-bottom: 20px;
+}
+
+    /* remove default view */
+body.splTemplate-dashboard {
+    background-color: white;
+
+}
+
+body.splTemplate-dashboard h2 {
+    font-family: "VegurRegular", "Helvetica Neue", "Helvetica", Arial, sans-serif;
+
+    font-size: 48px;
+    font-weight: bold;
+}
+
+.dashboardCell {
+    box-shadow: none;
+    border: 0;
+}
+
+.simpleResultsTableWrapper {
+    font-size: 16px;
+}
+
+.simpleResultsTableWrapper table {
+    width: 100%;
+    border: 1px solid #ddd;
+    border-bottom: 0px solid #000;
+    box-shadow: rgb(231, 245, 252) 3px 3px 0px 0px;
+    border-collapse: collapse;
+}
+
+.simpleResultsTableWrapper tr th, .simpleResultsTableWrapper tr th.pos {
+    border-top: 3px solid rgb(61, 171, 229);
+    border-left: 1px solid rgb(133, 202, 239);
+    border-right: 1px solid rgb(133, 202, 239);
+    border-bottom: 0px solid #000;
+    background: #85caef; /* Old browsers */
+    background: -moz-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #85caef), color-stop(100%, #3dabe5)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* IE10+ */
+    background: linear-gradient(top, #85caef 0%, #3dabe5 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#85caef', endColorstr = '#3dabe5', GradientType = 0); /* IE6-9 */
+
+    color: #fff;
+
+}
+
+.simpleResultsTableWrapper tr th a {
+
+    color: #fff;
+    text-shadow: rgba(0, 0, 0, 0.25) 0px -1px 2px;
+}
+
+.simpleResultsTableWrapper tbody tr {
+    background-color: rgb(231, 245, 252);
+    border-bottom: 1px #ccc solid;
+}
+
+.simpleResultsTableWrapper tbody td {
+    color: rgb(61, 171, 229);
+}
+
+.simpleResultsTableWrapper tbody tr:nth-child(odd) {
+    background-color: rgb(255, 255, 255);
+}
+
+    /*.simpleResultsTableWrapper tr td:hover, */
+.simpleResultsTableWrapper tr.mouseoverHighlight td {
+    background-color: #f3ecbb;
+}
+
+.simpleResultsTableWrapper tr td,
+.simpleResultsTableWrapper tr td.pos {
+    font-family: "VegurLight", "Helvetica Neue", "Helvetica", Arial, sans-serif;
+    font-size: 16px;
+    border: 0;
+    background-color: transparent;
+}
+
+.simpleResultsTableWrapper tr td.red {
+    background-color: #ea9999;
+}
+
+.simpleResultsTableWrapper tr td.amber {
+    background-color: #f9cb9c;
+}
+
+.simpleResultsTableWrapper tr td.green {
+    background-color: #b6d7a8;
+}
+
+.simpleResultsTableWrapper tr td.colour_2 {
+    background-color: #ea9999;
+}
+
+.simpleResultsTableWrapper tr td.colour_1 {
+    background-color: #f9cb9c;
+}
+
+.simpleResultsTableWrapper tr td.colour_0 {
+    background-color: #b6d7a8;
+}
+
+.simpleResultsTableWrapper.mouseoverHighlight {
+    background: transparent;
+}
+
+.SimpleResultsTable.mouseoverHighlight {
+    background: transparent;
+}
+
+.simpleResultsTableWrapper tr th a .splSortNone,
+.simpleResultsTableWrapper tr th a .splSortAsc,
+.simpleResultsTableWrapper tr th a .splSortDesc {
+    background-position: center right;
+    background-repeat: no-repeat;
+    font-size: 1em;
+    width: 21px;
+    height: 9px;
+    right: -20px;
+    position: static;
+}
+
+.SingleValueHolder {
+    border-top: 3px solid rgb(251, 177, 2);
+    border-left: 1px solid rgb(254, 221, 91);
+    border-right: 1px solid rgb(254, 221, 91);
+    border-bottom: 1px solid rgb(254, 221, 91);
+
+    background: #fedd5b; /* Old browsers */
+    background: -moz-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #fedd5b), color-stop(100%, #fbb302)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* IE10+ */
+    background: linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#fedd5b', endColorstr = '#fbb302', GradientType = 0); /* IE6-9 */
+
+    border-radius: 0;
+    /*box-shadow: none;*/
+    box-shadow: rgb(231, 245, 252) 3px 3px 0px 0px;
+    border-collapse: collapse;
+
+    padding-top: 20px;
+    padding-bottom: 20px;
+    text-align: center;
+    position: static;
+
+    margin-right: 10px;
+
+    width: 100%;
+
+}
+
+.SingleValueHolder span {
+    color: #fff;
+    text-shadow: rgba(0, 0, 0, 0.25) 0px -1px 2px;
+    font-weight: bold;
+    font-size: 48px;
+    line-height: 48px;
+    display: block;
+
+}
+
+.summary tr th, .summary tr th.pos {
+
+    border-top: 3px solid #2d9239;
+    border-left: 1px solid #b6d7a8;
+    border-right: 1px solid #b6d7a8;
+    border-bottom: 1px solid #b6d7a8;
+
+
+    background: #b6d7a8; /* Old browsers */
+    background: -moz-linear-gradient(top, #b6d7a8 0%, #2d9239 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #b6d7a8), color-stop(100%, #2d9239)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #b6d7a8 0%, #2d9239 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #b6d7a8 0%, #2d9239 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #b6d7a8 0%, #2d9239 100%); /* IE10+ */
+    background: linear-gradient(top, #b6d7a8 0%, #2d9239 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#b6d7a8', endColorstr = '#2d9239', GradientType = 0); /* IE6-9 */
+
+}
+
+.summary tbody tr td {
+    color: rgb(45, 146, 57);
+}
+
+.summary tbody tr {
+    background-color: rgb(217, 236, 209);
+    border-bottom: 1px #ccc solid;
+}
+
+.cloudability table {
+    margin: -1px;
+    width: 100%;
+
+}
+
+.cloudability tbody tr {
+    background-color: rgb(255, 248, 219);
+}
+
+.cloudability tbody tr td {
+    color: rgb(251, 177, 2);
+    text-align: center;
+}
+
+.cloudability tbody tr td:nth-child(even) {
+    color: rgb(251, 177, 2);
+    font-weight: bold;
+}
+
+.cloudability tr th, .cloudability tr th.pos {
+    /*border: 1px solid rgb(255, 255, 255);*/
+    border-top: 3px solid rgb(251, 177, 2);
+    border-left: 1px solid rgb(254, 221, 91);
+    border-right: 1px solid rgb(254, 221, 91);
+    border-bottom: 1px solid rgb(254, 221, 91);
+    /*border-top: 3px solid rgb(231, 245, 252);*/
+
+    background: #fedd5b; /* Old browsers */
+    background: -moz-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #fedd5b), color-stop(100%, #fbb302)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* IE10+ */
+    background: linear-gradient(top, #fedd5b 0%, #fbb302 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#fedd5b', endColorstr = '#fbb302', GradientType = 0); /* IE6-9 */
+
+    color: #fff;
+
+}
+
+.instanceSizingCount table {
+    margin-top: -1px;
+    width: 100%;
+
+}
+
+.instanceSizingCount tr th, .instanceSizingCount tr th.pos {
+    border-top: 3px solid rgb(53, 63, 137);
+    border-left: 1px solid rgba(53, 64, 137, 0.65);
+    border-right: 1px solid rgba(53, 64, 137, 0.65);
+    border-bottom: 1px solid rgba(53, 64, 137, 0.65);
+
+    background: -moz-linear-gradient(top, rgba(53, 64, 137, 0.65) 0%, rgba(53, 64, 137, 1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(53, 64, 137, 0.65)), color-stop(100%, rgba(53, 64, 137, 1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, rgba(53, 64, 137, 0.65) 0%, rgba(53, 64, 137, 1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, rgba(53, 64, 137, 0.65) 0%, rgba(53, 64, 137, 1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, rgba(53, 64, 137, 0.65) 0%, rgba(53, 64, 137, 1) 100%); /* IE10+ */
+    background: linear-gradient(top, rgba(53, 64, 137, 0.65) 0%, rgba(53, 64, 137, 1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#a6354089', endColorstr = '#354089', GradientType = 0); /* IE6-9 */
+
+    color: #fff;
+
+}
+
+.instanceSizingCount tbody tr td {
+    color: rgb(53, 63, 137);
+    text-align: center;
+}
+
+.instanceSizingCount tbody tr td:nth-child(1) {
+    text-align: left;
+}
+
+.instanceSizingCount tbody tr {
+    background-color: rgb(219, 230, 249);
+    border-bottom: 1px #ccc solid;
+}
+
+.SingleValueHolder {
+    margin-left: -2px;
+}
+
+.SingleValueHolder.cloudabilityDate {
+    background: none;
+    border: 0;
+    box-shadow: none;
+
+    margin: 0;
+    padding: 0;
+
+}
+
+.SingleValueHolder.cloudabilityDate span {
+    color: rgb(251, 177, 2);
+    text-shadow: rgba(251, 177, 2) 0px -1px 2px;
+    font-size: 32px;
+    line-height: 32px;
+
+}
+
+.linktable table {
+    margin-top: -1px;
+    width: 100%;
+
+}
+
+.linktable tbody tr {
+    background-color: rgb(255, 232, 232);
+}
+
+.linktable tbody tr td {
+    color: rgb(221, 42, 51);
+}
+
+.linktable tbody tr td:nth-child(even) {
+    color: rgb(221, 42, 51);
+    font-weight: bold;
+}
+
+.linktable tr th, .linktable tr th.pos {
+    border: 1px solid rgb(255, 255, 255);
+    /*border-top: 3px solid rgb(251, 177, 2);*/
+    border-top: 3px solid rgb(221, 42, 51);
+
+    background: -moz-linear-gradient(top, rgba(221, 42, 51, 0.6) 0%, rgba(221, 42, 51, 1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(221, 42, 51, 0.6)), color-stop(100%, rgba(221, 42, 51, 1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, rgba(221, 42, 51, 0.6) 0%, rgba(221, 42, 51, 1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, rgba(221, 42, 51, 0.6) 0%, rgba(221, 42, 51, 1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, rgba(221, 42, 51, 0.6) 0%, rgba(221, 42, 51, 1) 100%); /* IE10+ */
+    background: linear-gradient(top, rgba(221, 42, 51, 0.6) 0%, rgba(221, 42, 51, 1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#99dd2a33', endColorstr = '#dd2a33', GradientType = 0); /* IE6-9 */
+
+    color: #fff;
+
+}
+
+.titleReport {
+    color: black;
+    font-size: 16px;
+    font-weight: normal;
+    font-weight: bold;
+}
+
+    /*.ServerSideInclude div{
+        height: 3px;
+        line-height:20px;
+    }*/
+
+.titleReport2 {
+    color: black;
+    font-size: 16px;
+    font-weight: normal;
+    margin-left: 6px;
+}
+
+.normalTextReport {
+    color: black;
+    font-size: 14px;
+}
+
+.normalTitleReport {
+    color: black;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.smallTextReport {
+    color: black;
+    font-size: 10px;
+    font-style: italic;
+}
+
+.red {
+    background-color: #ea9999;
+}
+
+.amber {
+    background-color: #f9cb9c;
+}
+
+.green {
+    background-color: #b6d7a8;
+}
+
+.homepageLink {
+    font-family: "VegurMedium", "Helvetica Neue", "Helvetica", Arial, sans-serif;
+    color: white;
+    border: 8px ridge #003C8C;
+    background-color: #DC0000;
+    padding: 10px;
+    text-align: center;
+}
+
+.tableDescription {
+    color: black;
+    font-size: 10px;
+    font-style: italic;
+}
+
+.layoutCell.firstCell {
+    padding: 0;
+    margin: 0;
+
+}
+
+.layoutCellInner.dashboardCell {
+    margin: 0;
+}
+
+.financialSummary tr td:nth-child(3) {
+    text-align: right;
+}
+
+.financialSummary tr td:nth-child(4) {
+    text-align: right;
+}
+
+.financialSummary th {
+    display: none;
+}
+
+.financialSummary .simpleResultsTable tr:nth-child(2) {
+    border-top: 3px solid rgb(61, 171, 229);
+    border-left: 1px solid rgb(133, 202, 239);
+    border-right: 1px solid rgb(133, 202, 239);
+    border-bottom: 0px solid #000;
+    background: #85caef; /* Old browsers */
+    background: -moz-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, #85caef), color-stop(100%, #3dabe5)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #85caef 0%, #3dabe5 100%); /* IE10+ */
+    background: linear-gradient(top, #85caef 0%, #3dabe5 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr = '#85caef', endColorstr = '#3dabe5', GradientType = 0); /* IE6-9 */
+    text-align: left;
+    font-weight: bold;
+    color: white;
+    border-color: #CCC;
+    text-shadow: rgba(0, 0, 0, 0.25) 0px -1px 2px;
+}
+
+.financialSummary .simpleResultsTable  tr:nth-child(2) td {
+    color: white;
+}
+
+.splunkEditInPlace {
+    color: black;
+    font-size: 10px;
+    font-style: italic;
+}
+
+    /*
+        Variable Grid System (Fluid Version).
+        Learn more ~ http://www.spry-soft.com/grids/
+        Based on 960 Grid System - http://960.gs/ & 960 Fluid - http://www.designinfluences.com/
+
+        Licensed under GPL and MIT.
+    */
+
+
+    /* Containers
+    ----------------------------------------------------------------------------------------------------*/
+.container_12 {
+    width: 92%;
+    margin-left: 4%;
+    margin-right: 4%;
+}
+
+    /* Grid >> Global
+    ----------------------------------------------------------------------------------------------------*/
+
+.grid_1,
+.grid_2,
+.grid_3,
+.grid_4,
+.grid_5,
+.grid_6,
+.grid_7,
+.grid_8,
+.grid_9,
+.grid_10,
+.grid_11,
+.grid_12 {
+    display:inline;
+    float: left;
+    position: relative;
+    margin-left: 1%;
+    margin-right: 1%;
+}
+
+    /* Grid >> Children (Alpha ~ First, Omega ~ Last)
+    ----------------------------------------------------------------------------------------------------*/
+
+.alpha {
+    margin-left: 0;
+}
+
+.omega {
+    margin-right: 0;
+}
+
+    /* Grid >> 12 Columns
+    ----------------------------------------------------------------------------------------------------*/
+
+
+.container_12 .grid_1 {
+    width:6.333%;
+}
+
+.container_12 .grid_2 {
+    width:14.667%;
+}
+
+.container_12 .grid_3 {
+    width:23.0%;
+}
+
+.container_12 .grid_4 {
+    width:31.333%;
+}
+
+.container_12 .grid_5 {
+    width:39.667%;
+}
+
+.container_12 .grid_6 {
+    width:48.0%;
+}
+
+.container_12 .grid_7 {
+    width:56.333%;
+}
+
+.container_12 .grid_8 {
+    width:64.667%;
+}
+
+.container_12 .grid_9 {
+    width:73.0%;
+}
+
+.container_12 .grid_10 {
+    width:81.333%;
+}
+
+.container_12 .grid_11 {
+    width:89.667%;
+}
+
+.container_12 .grid_12 {
+    width:98.0%;
+}
+
+
+
+    /* Prefix Extra Space >> 12 Columns
+    ----------------------------------------------------------------------------------------------------*/
+
+
+.container_12 .prefix_1 {
+    padding-left:8.333%;
+}
+
+.container_12 .prefix_2 {
+    padding-left:16.667%;
+}
+
+.container_12 .prefix_3 {
+    padding-left:25.0%;
+}
+
+.container_12 .prefix_4 {
+    padding-left:33.333%;
+}
+
+.container_12 .prefix_5 {
+    padding-left:41.667%;
+}
+
+.container_12 .prefix_6 {
+    padding-left:50.0%;
+}
+
+.container_12 .prefix_7 {
+    padding-left:58.333%;
+}
+
+.container_12 .prefix_8 {
+    padding-left:66.667%;
+}
+
+.container_12 .prefix_9 {
+    padding-left:75.0%;
+}
+
+.container_12 .prefix_10 {
+    padding-left:83.333%;
+}
+
+.container_12 .prefix_11 {
+    padding-left:91.667%;
+}
+
+
+
+    /* Suffix Extra Space >> 12 Columns
+    ----------------------------------------------------------------------------------------------------*/
+
+
+.container_12 .suffix_1 {
+    padding-right:8.333%;
+}
+
+.container_12 .suffix_2 {
+    padding-right:16.667%;
+}
+
+.container_12 .suffix_3 {
+    padding-right:25.0%;
+}
+
+.container_12 .suffix_4 {
+    padding-right:33.333%;
+}
+
+.container_12 .suffix_5 {
+    padding-right:41.667%;
+}
+
+.container_12 .suffix_6 {
+    padding-right:50.0%;
+}
+
+.container_12 .suffix_7 {
+    padding-right:58.333%;
+}
+
+.container_12 .suffix_8 {
+    padding-right:66.667%;
+}
+
+.container_12 .suffix_9 {
+    padding-right:75.0%;
+}
+
+.container_12 .suffix_10 {
+    padding-right:83.333%;
+}
+
+.container_12 .suffix_11 {
+    padding-right:91.667%;
+}
+
+
+
+    /* Push Space >> 12 Columns
+    ----------------------------------------------------------------------------------------------------*/
+
+
+.container_12 .push_1 {
+    left:8.333%;
+}
+
+.container_12 .push_2 {
+    left:16.667%;
+}
+
+.container_12 .push_3 {
+    left:25.0%;
+}
+
+.container_12 .push_4 {
+    left:33.333%;
+}
+
+.container_12 .push_5 {
+    left:41.667%;
+}
+
+.container_12 .push_6 {
+    left:50.0%;
+}
+
+.container_12 .push_7 {
+    left:58.333%;
+}
+
+.container_12 .push_8 {
+    left:66.667%;
+}
+
+.container_12 .push_9 {
+    left:75.0%;
+}
+
+.container_12 .push_10 {
+    left:83.333%;
+}
+
+.container_12 .push_11 {
+    left:91.667%;
+}
+
+
+
+    /* Pull Space >> 12 Columns
+    ----------------------------------------------------------------------------------------------------*/
+
+
+.container_12 .pull_1 {
+    left:-8.333%;
+}
+
+.container_12 .pull_2 {
+    left:-16.667%;
+}
+
+.container_12 .pull_3 {
+    left:-25.0%;
+}
+
+.container_12 .pull_4 {
+    left:-33.333%;
+}
+
+.container_12 .pull_5 {
+    left:-41.667%;
+}
+
+.container_12 .pull_6 {
+    left:-50.0%;
+}
+
+.container_12 .pull_7 {
+    left:-58.333%;
+}
+
+.container_12 .pull_8 {
+    left:-66.667%;
+}
+
+.container_12 .pull_9 {
+    left:-75.0%;
+}
+
+.container_12 .pull_10 {
+    left:-83.333%;
+}
+
+.container_12 .pull_11 {
+    left:-91.667%;
+}
+
+
+
+
+    /* Clear Floated Elements
+    ----------------------------------------------------------------------------------------------------*/
+
+    /* http://sonspring.com/journal/clearing-floats */
+
+.clear {
+    clear: both;
+    display: block;
+    overflow: hidden;
+    visibility: hidden;
+    width: 0;
+    height: 0;
+}
+
+    /* http://perishablepress.com/press/2008/02/05/lessons-learned-concerning-the-clearfix-css-hack */
+
+.clearfix:after {
+    clear: both;
+    content: ' ';
+    display: block;
+    font-size: 0;
+    line-height: 0;
+    visibility: hidden;
+    width: 0;
+    height: 0;
+}
+
+.clearfix {
+    display: inline-block;
+}
+
+* html .clearfix {
+    height: 1%;
+}
+
+.clearfix {
+    display: block;
+}
+</style>
+<body>
+<div class="container">
