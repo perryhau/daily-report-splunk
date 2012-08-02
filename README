@@ -1,6 +1,4 @@
-Daily Report script based on PhantomJS ( not included in repo, can be downloaded from http://phantomjs.org/ )
-
-Creating daily reports from splunk views and sending them to clients
+Daily Report script version 2.0 using splunk  python sdk
 
 
 Cloudreach Ltd - 2012
