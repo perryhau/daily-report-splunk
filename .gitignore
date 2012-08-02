@@ -7,7 +7,9 @@
 phantomjs/
 
 #exclude config from repo
-config/
+config/confidential.conf
+config/total_report.conf
+
 
 #exclude real data config
 real_data/
@@ -17,3 +19,6 @@ bs4/
 
 #exclude production test files
 test_production_*.py
+test_totalreport.py
+
+*.html

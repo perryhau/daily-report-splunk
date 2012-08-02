@@ -16,8 +16,8 @@ class DailyReportTest(unittest.TestCase):
         except ConfigParser.NoSectionError:
             self.host = ''
             self.port = ''
-            self.splunk_username = ''
-            self.splunk_password = ''
+            self.username = ''
+            self.password = ''
             self.auth_username = ''
             self.auth_password = ''
             self.mailserver = ''
@@ -44,7 +44,8 @@ class DailyReportTest(unittest.TestCase):
     def test_should_return_app_names_with_dailyreport_config(self):
         splunk_home = 'test_splunk'
         expected_item = ['%s/etc/apps/app1/local/dailyreport.conf' % splunk_home,
-                         '%s/etc/apps/app3/local/dailyreport.conf' % splunk_home]
+                         '%s/etc/apps/app3/local/dailyreport.conf' % splunk_home,
+                         '%s/etc/apps/app5/local/dailyreport.conf' % splunk_home]
         dr = DailyReport(splunk_home=splunk_home)
         apps_with_config = dr.get_apps()
         self.assertEquals(expected_item, apps_with_config)
@@ -124,8 +125,8 @@ class DailyReportTest(unittest.TestCase):
     def test_should_return_content_on_valid_connection_data(self):
         # update connection.conf
         self.load_config()
-        dr = DailyReport(host=self.host, port=self.port, username=self.splunk_username,
-            password=self.splunk_password)
+        dr = DailyReport(host=self.host, port=self.port, username=self.username,
+            password=self.password)
         output = dr.get_report(index_name=self.index_name)
         self.assertTrue(len(output) > 0)
 
@@ -164,17 +165,17 @@ class DailyReportTest(unittest.TestCase):
         self.assertEqual(expected_config, output_config)
 
 
-    def test_should_send_email_to_private_account(self):
-        self.load_config()
-        dr = DailyReport()
-        mail_fields = ['auth_username', 'auth_password', 'mailserver', 'use_ssl', 'use_tls', 'from']
-        for x in mail_fields:
-            dr.mailer_config[x] = getattr(self, x)
-
-        bodyHTML = 'This is <b>HTML</b> email'
-        dr.send_email(to=self.test_to, html_body=bodyHTML)
-        # check mailbox
-        self.assertTrue(True)
+#    def test_should_send_email_to_private_account(self):
+#        self.load_config()
+#        dr = DailyReport()
+#        mail_fields = ['auth_username', 'auth_password', 'mailserver', 'use_ssl', 'use_tls', 'from']
+#        for x in mail_fields:
+#            dr.mailer_config[x] = getattr(self, x)
+#
+#        bodyHTML = 'This is <b>HTML</b> email'
+#        dr.send_email(to=self.test_to, html_body=bodyHTML)
+#        # check mailbox
+#        self.assertTrue(True)
 
 
 

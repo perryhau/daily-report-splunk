@@ -36,7 +36,7 @@ class DailyReportProductionDataTest(unittest.TestCase):
         logging.basicConfig(level=logging.DEBUG)
         self.load_config()
         dr = DailyReport(config='config/confidential.conf', debug=True)
-        output = dr.get_report(index_name='imagination')
+        output = dr.get_report(index_name='newsinternational')
         # dr.send_email(to="jakub.zygmunt@cloudreach.co.uk", title="production test", html_body=output)
         self.assertTrue(len(output) > 0)
 
